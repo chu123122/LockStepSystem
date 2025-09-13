@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using System.Net;
 using System.Net.Sockets;
@@ -107,7 +108,7 @@ public class ClientManager : MonoSingleton<ClientManager>
             _lastNoResponseTime = Time.time;
             if (Time.time - _lastNoResponseTime > NoResponseTime)
                 Debug.Log("未接收到服务端回应" +
-                          $"当前时间：{Time.time} ");
+                          $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} ");
             return;
         }
 
@@ -125,7 +126,7 @@ public class ClientManager : MonoSingleton<ClientManager>
                 _gameClockManager.currentLogicFrame = joinPacket.frame_number;
                 Debug.LogWarning($"从服务端接收回应成功 " +
                                  $"分配客户端id：{_id}" +
-                                 $"当前时间：{Time.time} " +
+                                 $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} " +
                                  $"客户端逻辑帧(同步后)：{_gameClockManager.currentLogicFrame}");
                 break;
             case packet_type.CommandSet:
@@ -176,7 +177,7 @@ public class ClientManager : MonoSingleton<ClientManager>
         Debug.Log($"发送数据包往服务端成功 " +
                   $"数据包类型：{type}" +
                   $"发送返回值：{sendValue}" +
-                  $"当前时间：{Time.time} " +
+                  $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} " +
                   $"客户端逻辑帧：{_gameClockManager.currentLogicFrame}");
     }
 }

@@ -15,7 +15,7 @@ namespace Client
 
         private const float LOGIC_FRAME_RATE = 30.0f;
         private const float TIME_STEP = 1.0f / LOGIC_FRAME_RATE; // 每帧的固定时长，约0.033秒
-        private const int INPUT_DELAY = 3; //输入延迟
+        private const int INPUT_DELAY = 20; //输入延迟
 
         private ClientManager _clientManager;
         private InputManager _inputManager;
@@ -33,6 +33,7 @@ namespace Client
 
             while (_accumulator >= TIME_STEP)
             {
+                Debug.LogError($"当前逻辑帧：{currentLogicFrame}");
                 //从输入管理器,收集输入创建指令
                 PlayerInputState playerInputState = _inputManager.GetPlayerInputCommand();
                 player_input_command command = _clientManager.CreateInputCommand(playerInputState);
@@ -71,7 +72,8 @@ namespace Client
         {
             foreach (var inputCommand in inputCommands)
             {
-                OnGameLogicUpdate?.Invoke(inputCommand);
+                if(inputCommand.id!=-1)
+                    OnGameLogicUpdate?.Invoke(inputCommand);
             }
         }
     }

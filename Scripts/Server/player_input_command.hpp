@@ -48,7 +48,7 @@ struct frame_packet
     frame_packet()
     {
     }
-    frame_packet(int frame_number, int command_count, const player_input_command *commands) : frame_number(frame_number), command_count(command_count)
+    frame_packet(int packet_type, int frame_number, int command_count, const player_input_command *commands) : packet_type(packet_type), frame_number(frame_number), command_count(command_count)
     {
         for (int i = 0; i < command_count && i < MAX_COMMANDS_PER_PACKET; ++i)
         {

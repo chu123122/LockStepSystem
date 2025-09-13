@@ -73,6 +73,7 @@ int main(void)
                         int buf_len = utils.serialized_packet(response_packet, send_buf);
                         network_manager.send_buf_to_client(current_server_frame, send_buf, buf_len, client_addr);
                         std::cout << "成功发送回应"
+                                  << " 当前时间： " << std::put_time(std::localtime(&now_c), "%F %T")
                                   << std::endl;
                         break;
                     }
@@ -98,11 +99,13 @@ int main(void)
                     }
                     }
                 }
+                else
+                {
+                    break;
+                }
             }
 
             int client_count = client_manager.get_client_count();
-            std::cout << "当前客户端数量：" << client_count
-                      << std::endl;
 
             // 2.处理指令阶段
             if (client_count > 0)
@@ -113,7 +116,7 @@ int main(void)
                     for (auto &&client_addr : client_addrs)
                     {
                         std::vector<player_input_command> command_set = frame_sync_manager.get_command_set(current_server_frame);
-                        frame_packet packet(current_server_frame, command_set.size(), command_set.data());
+                        frame_packet packet((int)packet_type::CommandSet, current_server_frame, command_set.size(), command_set.data());
 
                         char send_buf[1028];
                         int buf_len = utils.serialized_packet(packet, send_buf);
