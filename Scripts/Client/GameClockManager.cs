@@ -39,7 +39,7 @@ namespace Client
                 if (_inputManager.GetPlayerInput())
                 {
                     _inputManager.ResetInput();
-                    _clientManager.AddLocalPlayerInputCommand(command);
+                    _clientManager.AddLocalPlayerInputCommand(command, currentLogicFrame);
                 }
 
                 //检查当前逻辑帧是否收集到了玩家输入指令
@@ -47,6 +47,7 @@ namespace Client
                 {
                     _clientManager.SendInputCommandToServer(currentLogicFrame); //发送指令往服务端
                 }
+
                 _clientManager.ReceivePacketFromServer(); //接收从服务端传输过来的指令集
 
                 executeLogicFrame = currentLogicFrame - INPUT_DELAY; //当前执行帧

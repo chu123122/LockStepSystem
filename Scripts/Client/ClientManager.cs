@@ -10,7 +10,10 @@ using UnityEngine.Serialization;
 public class ClientManager : MonoSingleton<ClientManager>
 {
     //TODO:需要考虑单纯用List的Index作为指令的逻辑帧数的可行性（或许用Dic才可以达到效果？）
-    private readonly List<player_input_command> _logicCommandsList = new List<player_input_command>();
+    private readonly Dictionary<int, player_input_command> _logicCommandsDic =
+        new Dictionary<int, player_input_command>();
+
+    //  private readonly List<player_input_command> _logicCommandsList = new List<player_input_command>();
     public readonly Dictionary<int, player_input_command[]> CommandSetDic = new();
     private IPEndPoint _anyIP;
     private UdpClient _client;
@@ -20,6 +23,9 @@ public class ClientManager : MonoSingleton<ClientManager>
 
     private bool _isConnect = false;
     private float _lastJoinRequestTime = -1f;
+
+    private const float NoResponseTime = 2f;
+    private float _lastNoResponseTime = 0f;
 
     public override void Awake()
     {
@@ -54,15 +60,20 @@ public class ClientManager : MonoSingleton<ClientManager>
     /// </summary>
     public void SendInputCommandToServer(int currentFrame)
     {
-        player_input_command command = _logicCommandsList[currentFrame];
+        if (!_logicCommandsDic.TryGetValue(currentFrame, out var command))
+        {
+            Debug.LogError("当前逻辑帧中不存在玩家输入指令");
+            return;
+        }
+
         SendPacketToServer(command, packet_type.Command);
     }
 
     public bool HaveInputCommandInFrame(int currentFrame)
     {
-        if (_logicCommandsList.Count < currentFrame)
-            return false;
-        return true;
+        if (_logicCommandsDic.ContainsKey(currentFrame)) //TODO
+            return true;
+        return false;
     }
 
 
@@ -84,17 +95,19 @@ public class ClientManager : MonoSingleton<ClientManager>
         return playerInputCommand;
     }
 
-    public void AddLocalPlayerInputCommand(player_input_command playerInputCommand)
+    public void AddLocalPlayerInputCommand(player_input_command playerInputCommand, int currentFrame)
     {
-        _logicCommandsList.Add(playerInputCommand);
+        _logicCommandsDic.Add(currentFrame, playerInputCommand);
     }
 
     public void ReceivePacketFromServer()
     {
         if (_client.Available <= 0)
         {
-            Debug.Log("未接收到服务端回应" +
-                      $"当前时间：{Time.time} ");
+            _lastNoResponseTime = Time.time;
+            if (Time.time - _lastNoResponseTime > NoResponseTime)
+                Debug.Log("未接收到服务端回应" +
+                          $"当前时间：{Time.time} ");
             return;
         }
 
