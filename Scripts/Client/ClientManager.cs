@@ -153,6 +153,9 @@ public class ClientManager : MonoSingleton<ClientManager>
                 myData = Common.StructToBytes(command);
                 sendValue = _client.Send(myData, myData.Length, _anyIP);
                 break;
+            default:
+                Debug.LogError("未知错误，无法判定发送往服务器包类型");
+                break;
         }
 
         Debug.Log($"发送数据包往服务端成功 " +

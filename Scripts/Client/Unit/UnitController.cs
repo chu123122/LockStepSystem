@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class UnitController : MonoBehaviour
 {
+    public float speed = 2f;
     private Camera _camera;
     private Vector3 _targetPosition;
 
@@ -18,15 +19,15 @@ public class UnitController : MonoBehaviour
         _camera = Camera.main;
         GameClockManager.Instance.OnGameLogicUpdate += Move;
     }
-    
+
     private void Move(player_input_command command)
     {
-        Vector3 targetPos=new Vector3(command.x,command.y,command.z);
+        Vector3 targetPos = new Vector3(command.x, command.y, command.z);
         float distance = Vector3.Distance(transform.position, targetPos);
-        if (distance> 0.1f)
+        while (Vector3.Distance(transform.position, targetPos) > 0.1f)
         {
             transform.position = Vector3.MoveTowards(transform.position,
-                targetPos, Time.deltaTime * 10f);
+                targetPos, Time.deltaTime * speed);
         }
     }
 }
