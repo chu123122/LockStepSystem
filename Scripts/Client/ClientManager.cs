@@ -75,6 +75,7 @@ public class ClientManager : MonoSingleton<ClientManager>
         Vector3 movePos = playerInputState.MovePos;
         player_input_command playerInputCommand = new player_input_command()
         {
+            packet_type = (int)packet_type.Command,
             id = _id,
             x = movePos.x,
             y = movePos.y,
@@ -92,7 +93,8 @@ public class ClientManager : MonoSingleton<ClientManager>
     {
         if (_client.Available <= 0)
         {
-            Debug.Log("未接收到服务端回应");
+            Debug.Log("未接收到服务端回应" +
+                      $"当前时间：{Time.time} ");
             return;
         }
 

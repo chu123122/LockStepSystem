@@ -91,7 +91,9 @@ int main(void)
 
                     default:
                     {
-                        std::cout << "未知包类型" << std::endl;
+                        std::cout << "未知包类型:" << (int)type
+                                  << "接收客户端指令 当前时间： " << std::put_time(std::localtime(&now_c), "%F %T")
+                                  << std::endl;
                         break;
                     }
                     }

@@ -36,7 +36,11 @@ namespace Client
                 //从输入管理器,收集输入创建指令
                 PlayerInputState playerInputState = _inputManager.GetPlayerInputCommand();
                 player_input_command command = _clientManager.CreateInputCommand(playerInputState);
-                _clientManager.AddLocalPlayerInputCommand(command);
+                if (_inputManager.GetPlayerInput())
+                {
+                    _inputManager.ResetInput();
+                    _clientManager.AddLocalPlayerInputCommand(command);
+                }
 
                 //检查当前逻辑帧是否收集到了玩家输入指令
                 if (_clientManager.HaveInputCommandInFrame(currentLogicFrame))
