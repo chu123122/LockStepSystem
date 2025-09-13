@@ -1,0 +1,100 @@
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <vector>
+#include <cstring>
+
+class network_manager
+{
+private:
+    /* data */
+    sockaddr_in serverAddr;
+    int serverSocket;
+
+public:
+    network_manager(/* args */);
+    ~network_manager();
+
+    void recevie_command_from_client();
+
+    void send_command_set_to_client();
+
+    bool init()
+    {
+        serverSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+        int flags = fcntl(serverSocket, F_GETFL, 0);
+        fcntl(serverSocket, F_SETFL, flags | O_NONBLOCK);
+
+        serverAddr.sin_family = AF_INET;
+        serverAddr.sin_port = htons(8888);
+        serverAddr.sin_addr.s_addr = INADDR_ANY;
+        if (bind(serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0)
+        {
+            std::strerror(errno);
+            perror("bind failed");
+            close(serverSocket);
+            exit(EXIT_FAILURE);
+            return false;
+        }
+        else
+        {
+            printf("Bind successful!\n");
+            return true;
+        }
+    }
+
+    void send_buf_to_all_client(
+        int server_frame,
+        char *buf,
+        int buf_len,
+        const std::vector<sockaddr_in> &client_addrs)
+    {
+        for (auto &&client_addr : client_addrs)
+        {
+            sendto(serverSocket, buf, buf_len, 0, (sockaddr *)&client_addr, sizeof(sockaddr_in));
+        }
+    }
+    void send_buf_to_client(
+        int server_frame,
+        char *buf,
+        int buf_len,
+        const sockaddr_in &client_addr)
+    {
+        sendto(serverSocket, buf, buf_len, 0, (sockaddr *)&client_addr, sizeof(sockaddr_in));
+    }
+
+    int receive_from_client(char *buf, int buf_size, sockaddr *from)
+    {
+        socklen_t fromLen = sizeof(sockaddr_in);
+        int recvLen = recvfrom(serverSocket, buf, buf_size, 0, from, &fromLen);
+        if (recvLen < 0)
+        {
+            if (errno == EWOULDBLOCK || errno == EAGAIN)
+            {
+                // 这不是一个真正的错误！
+                // 这只是Linux在告诉你：“老兄，邮箱是空的，别再问了，先去干点别的吧。”
+                // 在这里，你应该跳过这次循环，不做任何处理。
+            }
+            else
+            {
+                // 这是一个真正的、严重的错误！
+                perror("recvfrom failed");
+                // 在这里可能需要关闭socket
+            }
+        }
+        else
+        {
+            std::cout << "接收信息成功"
+                      << std::endl;
+        }
+
+        return recvLen;
+    }
+};
+
+network_manager::network_manager(/* args */) {}
+
+network_manager::~network_manager() {}

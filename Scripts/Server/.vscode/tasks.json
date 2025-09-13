@@ -1,0 +1,29 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "Build Server on WSL",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-g",
+                "-std=c++17",
+                "${workspaceFolder}/*.cpp",
+                "-o",
+                "${workspaceFolder}/server", 
+                "-lpthread" 
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Compiler: /usr/bin/g++"
+        }
+    ]
+}
