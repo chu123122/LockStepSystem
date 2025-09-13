@@ -7,11 +7,18 @@
 #include <unistd.h>
 
 #pragma pack(push, 1)
+
+struct packet_header
+{
+    int packet_type;
+};
+
 struct player_input_command
 {
     /* data */
+    int packet_type;
+
     int id;        // 客户端id
-                   // int input_index; // 客户端操作指令编号
     float x, y, z; // 移动位置
     player_input_command() : id(-1), x(0.0f), y(0.0f), z(0.0f)
     {
@@ -24,6 +31,8 @@ struct player_input_command
 
 struct frame_packet
 {
+    int packet_type;
+
     int frame_number;
     int command_count;
     player_input_command commands[MAX_COMMANDS_PER_PACKET];
@@ -38,10 +47,11 @@ struct frame_packet
 
 struct join_packet
 {
-    int type_index;
+    int packet_type;
+
     int id;
     int frame_number;
-    join_packet(int type_index, int id, int frame_number) : type_index(type_index), id(id), frame_number(frame_number)
+    join_packet(int packet_type, int id, int frame_number) : packet_type(packet_type), id(id), frame_number(frame_number)
     {
     }
 };

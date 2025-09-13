@@ -20,6 +20,10 @@ int serialized_frame_packet(
 {
     char *cursor = buffer;
 
+    int packet_type = send_packet.packet_type;
+    memcpy(cursor, &packet_type, sizeof(int));
+    cursor += sizeof(int);
+
     int frame_count = send_packet.frame_number;
     memcpy(cursor, &frame_count, sizeof(int));
     cursor += sizeof(int);
@@ -40,8 +44,8 @@ int serialized_join_packet(const join_packet &send_packet, char *buffer)
 {
     char *cursor = buffer;
 
-    int type_index = send_packet.type_index;
-    memcpy(cursor, &type_index, sizeof(int));
+    int packet_type = send_packet.packet_type;
+    memcpy(cursor, &packet_type, sizeof(int));
     cursor += sizeof(int);
 
     int id = send_packet.id;
@@ -58,6 +62,10 @@ int serialized_join_packet(const join_packet &send_packet, char *buffer)
 player_input_command deserialized_command(char *data)
 {
     char *cursor = data;
+
+    int packet_type;
+    memcpy(&packet_type, cursor, sizeof(int));
+    cursor += sizeof(int);
 
     int client_id;
     memcpy(&client_id, cursor, sizeof(int));

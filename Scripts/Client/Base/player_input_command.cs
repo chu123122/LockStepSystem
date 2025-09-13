@@ -11,22 +11,31 @@ namespace Client
     public enum packet_type
     {
         Join = 1,
-        Response = 2
+        Response = 2,
+        Command= 3,
+        CommandSet=4
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct packet_header
+    {
+        public int packet_type;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct player_input_command
     {
+        public int packet_type;
+        
         public int id; // 客户端id
-
-        //  public int frame_number;
-        // public int input_index; // 客户端操作指令编号
         public float x, y, z; // 移动位置
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct frame_packet
     {
+        public int packet_type;
+        
         public int frame_number;
         public int command_count;
 
@@ -37,8 +46,8 @@ namespace Client
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct join_packet
     {
-        public int type_index;
-        //public string player_name;
+        public int packet_type;
+        
         public int id;
         public int frame_number;
     }
