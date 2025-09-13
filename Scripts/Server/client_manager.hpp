@@ -31,11 +31,18 @@ public:
         for (auto &&i : client_vector)
         {
             if (i.id == player.id)
+            {
+                std::cout << "已连接上客户端，不进行添加"
+                          << std::endl;
                 return;
+            }
         }
+        std::cout << "成功添加客户端"
+                  << std::endl;
         player.id = current_id++;
         client_vector.push_back(player);
     }
+
     void remove_client(int id)
     {
         for (auto it = client_vector.begin(); it != client_vector.end(); ++it)

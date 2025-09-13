@@ -8,6 +8,14 @@
 
 #pragma pack(push, 1)
 
+enum class packet_type
+{
+    Join = 1,
+    Response = 2,
+    Command = 3,
+    CommandSet = 4
+};
+
 struct packet_header
 {
     int packet_type;
@@ -36,6 +44,10 @@ struct frame_packet
     int frame_number;
     int command_count;
     player_input_command commands[MAX_COMMANDS_PER_PACKET];
+
+    frame_packet()
+    {
+    }
     frame_packet(int frame_number, int command_count, const player_input_command *commands) : frame_number(frame_number), command_count(command_count)
     {
         for (int i = 0; i < command_count && i < MAX_COMMANDS_PER_PACKET; ++i)

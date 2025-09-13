@@ -13,78 +13,7 @@
 #include "network_manager.hpp"
 #include "client_manager.hpp"
 #include "frame_sync_manager.hpp"
-
-int serialized_frame_packet(
-    const frame_packet &send_packet,
-    char *buffer)
-{
-    char *cursor = buffer;
-
-    int packet_type = send_packet.packet_type;
-    memcpy(cursor, &packet_type, sizeof(int));
-    cursor += sizeof(int);
-
-    int frame_count = send_packet.frame_number;
-    memcpy(cursor, &frame_count, sizeof(int));
-    cursor += sizeof(int);
-
-    int command_count = send_packet.command_count;
-    memcpy(cursor, &command_count, sizeof(int));
-    cursor += sizeof(int);
-
-    for (auto &&command : send_packet.commands)
-    {
-        memcpy(cursor, &command, sizeof(player_input_command));
-        cursor += sizeof(player_input_command);
-    }
-    return cursor - buffer;
-}
-
-int serialized_join_packet(const join_packet &send_packet, char *buffer)
-{
-    char *cursor = buffer;
-
-    int packet_type = send_packet.packet_type;
-    memcpy(cursor, &packet_type, sizeof(int));
-    cursor += sizeof(int);
-
-    int id = send_packet.id;
-    memcpy(cursor, &id, sizeof(int));
-    cursor += sizeof(int);
-
-    int frame_number = send_packet.frame_number;
-    memcpy(cursor, &frame_number, sizeof(int));
-    cursor += sizeof(int);
-
-    return cursor - buffer;
-}
-
-player_input_command deserialized_command(char *data)
-{
-    char *cursor = data;
-
-    int packet_type;
-    memcpy(&packet_type, cursor, sizeof(int));
-    cursor += sizeof(int);
-
-    int client_id;
-    memcpy(&client_id, cursor, sizeof(int));
-    cursor += sizeof(int);
-
-    float x;
-    memcpy(&x, cursor, sizeof(float));
-    cursor += sizeof(float);
-
-    float y;
-    memcpy(&y, cursor, sizeof(float));
-    cursor += sizeof(float);
-
-    float z;
-    memcpy(&z, cursor, sizeof(float));
-    cursor += sizeof(float);
-
-    return player_input_command(client_id, x, y, z);
-}
+#include "utils.hpp"
 
 const float SERVER_TICK_RATE = 30.0f;
 const float TIME_STEP = 1.0f / SERVER_TICK_RATE;
@@ -98,6 +27,7 @@ int main(void)
     network_manager network_manager;
     client_manager client_manager;
     frame_sync_manager frame_sync_manager;
+    utils utils;
     if (!network_manager.init())
         printf("初始化失败");
 
@@ -114,89 +44,82 @@ int main(void)
         accumulator += deltaTime;
         while (accumulator > TIME_STEP)
         {
-            // 0.接收客户端连接中
-            while (client_manager.get_client_count() == 0)
+            while (true)
             {
-                std::cout << "尝试接接收客户端请求链接 当前时间： " << std::put_time(std::localtime(&now_c), "%F %T")
-                          << "当前服务端逻辑帧:" << current_server_frame
-                          << std::endl;
                 char buf[1028];
                 sockaddr_in client_addr;
                 int bytesReceived = network_manager.receive_from_client(buf, 1028, (sockaddr *)&client_addr);
                 if (bytesReceived > 0)
                 {
-                    std::cout << "接收客户端请求链接：成功"
-                              << std::endl;
-
                     char *cursor = buf;
-                    int type_index = -1;
-                    memcpy(&type_index, cursor, sizeof(int));
-                    cursor += sizeof(int);
+                    int packet_index = 0;
+                    memcpy(&packet_index, cursor, sizeof(int));
+                    packet_type type = (packet_type)packet_index;
 
-                    if (type_index != 1)
+                    switch (type)
                     {
-                        std::cout << "接收客户端请求链接：信息类型错误"
+                    case packet_type::Join:
+                    {
+                        std::cout << "接收客户端请求链接：成功"
+                                  << std::endl;
+
+                        join_packet response_packet((int)packet_type::Response,
+                                                    client_manager.get_client_id(),
+                                                    current_server_frame);
+                        client receive_client(client_addr);
+                        client_manager.add_client_with_check(receive_client); // 添加客户端
+
+                        char send_buf[1028];
+                        int buf_len = utils.serialized_packet(response_packet, send_buf);
+                        network_manager.send_buf_to_client(current_server_frame, send_buf, buf_len, client_addr);
+                        std::cout << "成功发送回应"
                                   << std::endl;
                         break;
                     }
-                    client receive_client(client_addr);
-                    client_manager.add_client_with_check(receive_client); // 添加客户端
-                    std::cout << "成功添加客户端"
-                              << std::endl;
-                    // 发送回应
-                    join_packet response_packet(2, client_manager.get_client_id(), current_server_frame);
-                    char send_buf[1028];
-                    int buf_len = serialized_join_packet(response_packet, send_buf);
-                    network_manager.send_buf_to_client(current_server_frame, send_buf, buf_len, client_addr);
-                    std::cout << "成功发送回应"
-                              << std::endl;
-                }
-                else
-                {
-                    std::cout << "接收客户端请求链接：失败"
-                              << std::endl;
-                    break;
-                }
-            }
 
-            // 1.收集指令阶段
-            // 在一个逻辑帧中尽可能接收客户端发送过来的信息
-            while (true && client_manager.get_client_count() != 0)
-            {
-                std::cout << "尝试接收客户端指令 当前时间： " << std::put_time(std::localtime(&now_c), "%F %T")
-                          << "当前服务端逻辑帧:" << current_server_frame
-                          << "当前服务端已连接客户端数量：" << client_manager.get_client_count()
-                          << std::endl;
-                char buf[1028];
-                sockaddr_in client_addr;
-                int bytesReceived = network_manager.receive_from_client(buf, 1028, (sockaddr *)&client_addr);
-                if (bytesReceived > 0)
-                {
-                    std::cout << "接收到客户端指令：成功"
-                              << std::endl;
+                    case packet_type::Command:
+                    {
+                        std::cout << "接收客户端指令 当前时间： " << std::put_time(std::localtime(&now_c), "%F %T")
+                                  << "当前服务端逻辑帧:" << current_server_frame
+                                  << "当前服务端已连接客户端数量：" << client_manager.get_client_count()
+                                  << std::endl;
 
-                    player_input_command receive_command = deserialized_command(buf);
-                    frame_sync_manager.add_command_in_map(receive_command, current_server_frame);
+                        player_input_command receive_command = utils.deserialized_command(buf);
+                        frame_sync_manager.add_command_in_map(receive_command, current_server_frame);
+                        break;
+                    }
 
-                    client receive_client(client_addr);
-                    client_manager.add_client_with_check(receive_client);
-                }
-                else
-                {
-                    std::cout << "接收客户端指令：失败"
-                              << std::endl;
-                    break;
+                    default:
+                    {
+                        std::cout << "未知包类型" << std::endl;
+                        break;
+                    }
+                    }
                 }
             }
 
-            // 2.处理指令阶段
             int client_count = client_manager.get_client_count();
             std::cout << "当前客户端数量：" << client_count
                       << std::endl;
-            if (frame_sync_manager.check_have_all_command(current_server_frame, client_count))
+
+            // 2.处理指令阶段
+            if (client_count > 0)
             {
-                frame_sync_manager.update_frame_sync_logic();
+                if (frame_sync_manager.check_have_all_command(current_server_frame, client_count))
+                {
+                    std::vector<sockaddr_in> client_addrs = client_manager.get_all_client_addr();
+                    for (auto &&client_addr : client_addrs)
+                    {
+                        std::vector<player_input_command> command_set = frame_sync_manager.get_command_set(current_server_frame);
+                        frame_packet packet(current_server_frame, command_set.size(), command_set.data());
+
+                        char send_buf[1028];
+                        int buf_len = utils.serialized_packet(packet, send_buf);
+                        network_manager.send_buf_to_client(current_server_frame, send_buf, buf_len, client_addr);
+                    }
+                }
             }
+
             accumulator -= TIME_STEP;
             current_server_frame++;
 

@@ -75,6 +75,7 @@ public class ClientManager : MonoSingleton<ClientManager>
         Vector3 movePos = playerInputState.MovePos;
         player_input_command playerInputCommand = new player_input_command()
         {
+            id = _id,
             x = movePos.x,
             y = movePos.y,
             z = movePos.z
