@@ -32,7 +32,8 @@ public class ClientManager : MonoSingleton<ClientManager>
     {
         base.Awake();
         _client = new UdpClient();
-        _anyIP = new IPEndPoint(IPAddress.Parse("172.27.148.19"), 8888);
+        _anyIP = new IPEndPoint(IPAddress.Parse("172.27.158.10"), 8888);
+        
     }
 
     private void Start()
@@ -54,6 +55,11 @@ public class ClientManager : MonoSingleton<ClientManager>
         }
         else //连接后进行逻辑帧更新
             _gameClockManager.LogicUpdate();
+    }
+
+    public int GetClientId()
+    {
+        return _id;
     }
 
     /// <summary>

@@ -63,7 +63,19 @@ public:
         int buf_len,
         const sockaddr_in &client_addr)
     {
-        sendto(serverSocket, buf, buf_len, 0, (sockaddr *)&client_addr, sizeof(sockaddr_in));
+        int send_value = sendto(serverSocket, buf, buf_len, 0, (sockaddr *)&client_addr, sizeof(sockaddr_in));
+        if (send_value < 0)
+        {
+            perror("send failed");
+        }
+        else
+        {
+            auto frameStartTime = std::chrono::high_resolution_clock::now();
+            std::time_t now_c = std::chrono::system_clock::to_time_t(frameStartTime);
+            std::cout << "发送信息成功"
+                      << "发送客户端指令集 当前时间： " << std::put_time(std::localtime(&now_c), "%F %T")
+                      << std::endl;
+        }
     }
 
     int receive_from_client(char *buf, int buf_size, sockaddr *from)

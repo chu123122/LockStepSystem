@@ -8,14 +8,15 @@ namespace Client
 {
     public class GameClockManager : MonoSingleton<GameClockManager>
     {
-        public event Action<player_input_command> OnGameLogicUpdate;
+        public event Action OnGameLogicUpdate;
+        public event Action<player_input_command> OnReceiveCommand;
 
         public int currentLogicFrame = 0;
         public int executeLogicFrame = 0;
 
         private const float LOGIC_FRAME_RATE = 30.0f;
         private const float TIME_STEP = 1.0f / LOGIC_FRAME_RATE; // 每帧的固定时长，约0.033秒
-        private const int INPUT_DELAY = 20; //输入延迟
+        private const int INPUT_DELAY = 5; //输入延迟
 
         private ClientManager _clientManager;
         private InputManager _inputManager;
@@ -55,25 +56,27 @@ namespace Client
                 if (_clientManager.CommandSetDic.Keys.Contains(executeLogicFrame)) //检查执行帧的指令集是否到达
                 {
                     player_input_command[] commands = _clientManager.CommandSetDic[executeLogicFrame];
-                    RunGameLogic(commands); //执行指令
+                    SendCommandSetToClient(commands); //执行指令
                 }
                 else
                 {
                     //游戏暂停等待
                 }
 
+                OnGameLogicUpdate?.Invoke();
                 _accumulator -= TIME_STEP;
                 currentLogicFrame += 1;
             }
         }
 
 
-        private void RunGameLogic(player_input_command[] inputCommands)
+        private void SendCommandSetToClient(player_input_command[] inputCommands)
         {
             foreach (var inputCommand in inputCommands)
             {
-                if(inputCommand.id!=-1)
-                    OnGameLogicUpdate?.Invoke(inputCommand);
+                if (inputCommand.id != -1 &&
+                    inputCommand.id == _clientManager.GetClientId())
+                    OnReceiveCommand?.Invoke(inputCommand);
             }
         }
     }

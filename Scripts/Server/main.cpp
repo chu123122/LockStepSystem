@@ -72,7 +72,7 @@ int main(void)
                         char send_buf[1028];
                         int buf_len = utils.serialized_packet(response_packet, send_buf);
                         network_manager.send_buf_to_client(current_server_frame, send_buf, buf_len, client_addr);
-                        std::cout << "成功发送回应"
+                        std::cout << "成功发送客户端请求加入回应"
                                   << " 当前时间： " << std::put_time(std::localtime(&now_c), "%F %T")
                                   << std::endl;
                         break;
@@ -110,7 +110,7 @@ int main(void)
             // 2.处理指令阶段
             if (client_count > 0)
             {
-                if (frame_sync_manager.check_have_all_command(current_server_frame, client_count))
+                if (frame_sync_manager.check_have_command(current_server_frame, client_count))
                 {
                     std::vector<sockaddr_in> client_addrs = client_manager.get_all_client_addr();
                     for (auto &&client_addr : client_addrs)

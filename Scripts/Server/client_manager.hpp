@@ -37,11 +37,11 @@ public:
                 return;
             }
         }
+        player.id = current_id++;
+        client_vector.push_back(player);
         std::cout << "成功添加客户端"
                   << "ID为:" << player.id
                   << std::endl;
-        player.id = current_id++;
-        client_vector.push_back(player);
     }
 
     void remove_client(int id)
