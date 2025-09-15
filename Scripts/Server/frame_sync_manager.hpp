@@ -16,23 +16,17 @@ public:
     {
         if (frameDataMap.find(frame_count) == frameDataMap.end())
         {
-            std::cout << "警告,当前帧未存在指定帧数据,请检查check_have_command函数是否存在问题" << std::endl;
+            std::cout << "警告,当前帧未存在指定帧数据,请检查check_have_frame_data函数是否存在问题" << std::endl;
             return nullptr;
         }
         return &frameDataMap[frame_count];
     }
 
-    bool check_have_command(int frame_count, int client_count)
+    bool check_have_frame_data(int frame_count, int client_count)
     {
         // 没有指定逻辑帧的指令集
         if (frameDataMap.find(frame_count) == frameDataMap.end())
             return false;
-
-        std::vector<player_input_command> &check_commands = frameDataMap[frame_count].player_input_commands;
-        // 注意该处逻辑进行了简化,只检查是否有指令数量等于客户端数量
-        if (check_commands.size() != client_count)
-            return false;
-
         return true;
     }
 
@@ -42,7 +36,6 @@ public:
     }
     void full_null_command_in_frame_data(frameData &frame_data)
     {
-        
     }
 };
 

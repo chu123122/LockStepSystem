@@ -112,7 +112,8 @@ int main(void)
             int client_count = client_manager.get_client_count();
 
             // 2.处理指令阶段
-            if (client_count > 0)
+            if (client_count > 0 &&
+                frame_sync_manager.check_have_frame_data(current_server_frame, client_count))
             {
                 frameData *frame_data = frame_sync_manager.get_frame_data(current_server_frame);
                 frameStatus &status = frame_data->status;
@@ -124,7 +125,7 @@ int main(void)
                     auto age = now - frame_data->creationTime;
 
                     // 收集完成
-                    if (command_set.size() == client_manager.get_client_count())
+                    if (command_set.size() == client_count)
                     {
                         status = frameStatus::Ready;
                     }

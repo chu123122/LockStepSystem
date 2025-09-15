@@ -26,7 +26,7 @@ public:
         return current_id;
     }
 
-    void add_client_with_check(client player)
+    void add_client_with_check(client &player)
     {
         for (auto &&i : client_vector)
         {

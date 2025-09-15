@@ -30,7 +30,8 @@ public class ClientManager : MonoSingleton<ClientManager>
     {
         base.Awake();
         _client = new UdpClient();
-        _anyIP = new IPEndPoint(IPAddress.Parse("172.27.158.10"), 8888);
+        _anyIP = new IPEndPoint(IPAddress.Parse("172.19.110.40"), 8888);
+        
     }
 
     private void Start()
@@ -80,6 +81,17 @@ public class ClientManager : MonoSingleton<ClientManager>
         return false;
     }
 
+    public bool HaveReceiveFrame(int currentFrame,int inputDelay)
+    {
+        foreach (var frame in _logicCommandsDic.Keys)
+        {
+            if(frame>=inputDelay)//获取到的指令集时间已经超过输入延迟
+                return true;
+        }
+
+        return false;
+    }
+
 
     /// <summary>
     /// 接收输入状态，将其转化为输入指令
@@ -109,7 +121,7 @@ public class ClientManager : MonoSingleton<ClientManager>
         if (_client.Available <= 0)
         {
             _lastNoResponseTime = Time.time;
-            if (Time.time - _lastNoResponseTime > NoResponseTime)
+            if (Time.time - _lastNoResponseTime > NoResponseTime)//TODO 存在bug导致基本不输出信息
                 Debug.Log("未接收到服务端回应" +
                           $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} ");
             return;

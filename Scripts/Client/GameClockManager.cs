@@ -35,7 +35,7 @@ namespace Client
 
             while (_accumulator >= TIME_STEP)
             {
-                Debug.LogError($"当前输入逻辑帧：{currentInputFrame}");
+                Debug.LogError($"当前输入帧：{currentInputFrame}，当前逻辑帧：{currentLogicFrame}");
                 //从输入管理器,收集输入创建指令
                 PlayerInputState playerInputState = _inputManager.GetPlayerInputCommand();
                 player_input_command command = _clientManager.CreateInputCommand(playerInputState);
@@ -54,11 +54,11 @@ namespace Client
                 _clientManager.ReceivePacketFromServer(); //接收从服务端传输过来的指令集
 
                 executeLogicFrame = currentLogicFrame - INPUT_DELAY; //当前执行帧
-                if (_clientManager.CommandSetDic.Keys.Contains(executeLogicFrame)) //检查执行帧的指令集是否到达
+                if (_clientManager.HaveReceiveFrame(executeLogicFrame, INPUT_DELAY)) //检查执行帧的指令集是否到达
                 {
                     player_input_command[] commands = _clientManager.CommandSetDic[executeLogicFrame];
                     SendCommandSetToClient(commands); //执行指令
-                    
+
                     OnGameLogicUpdate?.Invoke();
                     currentLogicFrame += 1;
                 }
