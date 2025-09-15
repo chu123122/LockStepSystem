@@ -8,20 +8,17 @@ namespace Client
 {
     public class GameClockManager : MonoSingleton<GameClockManager>
     {
-        public event Action OnGameLogicUpdate;
-        public event Action<player_input_command> OnReceiveCommand;
+        private const float LOGIC_FRAME_RATE = 30.0f;
+        public const float TIME_STEP = 1.0f / LOGIC_FRAME_RATE; // 每帧的固定时长，约0.033秒
+        private const int INPUT_DELAY = 5; //输入延迟
 
         public int currentLogicFrame = 0; //实际跑的逻辑帧，只依靠服务端控制
         public int currentInputFrame = 0; //进行输入采集的逻辑帧，依靠客户端进行一直运行
         public int executeLogicFrame = 0;
-
-        private const float LOGIC_FRAME_RATE = 30.0f;
-        private const float TIME_STEP = 1.0f / LOGIC_FRAME_RATE; // 每帧的固定时长，约0.033秒
-        private const int INPUT_DELAY = 5; //输入延迟
+        public float accumulator = 0.0f;
 
         private ClientManager _clientManager;
         private InputManager _inputManager;
-        private float _accumulator = 0.0f;
 
         private void Start()
         {
@@ -29,11 +26,14 @@ namespace Client
             _inputManager = InputManager.Instance;
         }
 
+        public event Action OnGameLogicUpdate;
+        public event Action<player_input_command> OnReceiveCommand;
+
         public void LogicUpdate()
         {
-            _accumulator += Time.deltaTime;
+            accumulator += Time.deltaTime;
 
-            while (_accumulator >= TIME_STEP)
+            while (accumulator >= TIME_STEP)
             {
                 Debug.LogError($"当前输入帧：{currentInputFrame}，当前逻辑帧：{currentLogicFrame}");
                 //从输入管理器,收集输入创建指令
@@ -55,7 +55,7 @@ namespace Client
 
                 //TODO 注意，这里进行了逻辑的简化，我们在开始时直接忽略了输入延迟的作用,并通过硬编码让逻辑帧0的指令集只执行一次
                 executeLogicFrame = currentLogicFrame - INPUT_DELAY; //当前执行帧
-                
+
                 if (_clientManager.ServerCommandSetDic.Keys.Contains(executeLogicFrame)) //检查执行帧的指令集是否到达
                 {
                     player_input_command[] commands = _clientManager.ServerCommandSetDic[executeLogicFrame];
@@ -73,7 +73,7 @@ namespace Client
                     //游戏暂停等待
                 }
 
-                _accumulator -= TIME_STEP;
+                accumulator -= TIME_STEP;
                 currentInputFrame += 1;
             }
         }

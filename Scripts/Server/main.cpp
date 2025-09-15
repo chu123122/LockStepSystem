@@ -77,7 +77,7 @@ int main(void)
                                   << std::endl;
 
                         // 客户端初始加入的创建单位指令
-                        player_input_command create_command(receive_client.id, (int)command_type::Create, 0, 1, 0);
+                        player_input_command create_command(receive_client.id, (int)command_type::Create, 0, 0, 0);
                         frame_sync_manager.add_command_in_map(create_command, current_server_frame);
                         break;
                     }
