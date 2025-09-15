@@ -29,8 +29,8 @@ public:
             return false;
 
         std::vector<player_input_command> &check_commands = commandSetMap[frame_count];
-        // 注意该处逻辑进行了简化,只检查是否有指令在指令集中，没有实现等待其他客户端的机制
-        if (check_commands.size() == 0)
+        // 注意该处逻辑进行了简化,只检查是否有指令数量等于客户端数量
+        if (check_commands.size() != client_count)
             return false;
 
         return true;

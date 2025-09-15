@@ -33,7 +33,6 @@ public class ClientManager : MonoSingleton<ClientManager>
         base.Awake();
         _client = new UdpClient();
         _anyIP = new IPEndPoint(IPAddress.Parse("172.27.158.10"), 8888);
-        
     }
 
     private void Start()
@@ -129,7 +128,7 @@ public class ClientManager : MonoSingleton<ClientManager>
                 join_packet joinPacket = Common.BytesToStruct<join_packet>(bytes);
                 _isConnect = true;
                 _id = joinPacket.id;
-                _gameClockManager.currentLogicFrame = joinPacket.frame_number;
+                _gameClockManager.currentInputFrame = joinPacket.frame_number; //同步输入逻辑帧
                 Debug.LogWarning($"从服务端接收回应成功 " +
                                  $"分配客户端id：{_id}" +
                                  $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} " +

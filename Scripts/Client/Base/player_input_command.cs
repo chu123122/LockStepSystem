@@ -16,6 +16,12 @@ namespace Client
         CommandSet=4
     }
 
+    public enum command_type
+    {
+        Create=1,
+        Move=2,
+    }
+
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct packet_header
     {
@@ -26,7 +32,8 @@ namespace Client
     public struct player_input_command
     {
         public int packet_type;
-        
+
+        public int command_type;
         public int id; // 客户端id
         public float x, y, z; // 移动位置
     }
