@@ -6,6 +6,7 @@ namespace Client
     public struct PlayerInputState
     {
         public Vector3 MovePos;
+        public command_type Type;
     }
 
     public enum packet_type

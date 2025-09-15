@@ -72,6 +72,10 @@ public:
         memcpy(&client_id, cursor, sizeof(int));
         cursor += sizeof(int);
 
+        int command_type;
+        memcpy(&command_type, cursor, sizeof(int));
+        cursor += sizeof(int);
+
         float x;
         memcpy(&x, cursor, sizeof(float));
         cursor += sizeof(float);
@@ -84,7 +88,7 @@ public:
         memcpy(&z, cursor, sizeof(float));
         cursor += sizeof(float);
 
-        return player_input_command(client_id, x, y, z);
+        return player_input_command(client_id, command_type, x, y, z);
     }
 };
 

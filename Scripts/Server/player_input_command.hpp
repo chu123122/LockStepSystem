@@ -15,6 +15,11 @@ enum class packet_type
     Command = 3,
     CommandSet = 4
 };
+enum class command_type
+{
+    Create = 1,
+    Move = 2
+};
 
 struct packet_header
 {
@@ -26,13 +31,14 @@ struct player_input_command
     /* data */
     int packet_type;
 
-    int id;        // 客户端id
+    int id; // 客户端id
+    int command_type;
     float x, y, z; // 移动位置
     player_input_command() : id(-1), x(0.0f), y(0.0f), z(0.0f)
     {
     }
 
-    player_input_command(int id, float x, float y, float z) : id(id), x(x), y(y), z(z)
+    player_input_command(int id, int command_type, float x, float y, float z) : id(id), command_type(command_type), x(x), y(y), z(z)
     {
     }
 };

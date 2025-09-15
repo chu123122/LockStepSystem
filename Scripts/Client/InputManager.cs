@@ -2,15 +2,16 @@ using UnityEngine;
 
 namespace Client
 {
-    public class InputManager:MonoSingleton<InputManager>
+    public class InputManager : MonoSingleton<InputManager>
     {
         private PlayerInputState _playerInputState;
         private Camera _camera;
 
         private bool _haveInput = false;
+
         public override void Awake()
         {
-            _playerInputState=new PlayerInputState();
+            _playerInputState = new PlayerInputState();
         }
 
         private void Start()
@@ -26,11 +27,12 @@ namespace Client
                 if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity,
                         LayerMask.GetMask("Ground")))
                 {
-                   Vector3 targetPosition = hit.point;
-                   targetPosition.y = transform.position.y;
-                   
-                   _playerInputState.MovePos=targetPosition;
-                   _haveInput=true;
+                    Vector3 targetPosition = hit.point;
+                    targetPosition.y = transform.position.y;
+
+                    _playerInputState.MovePos = targetPosition;
+                    _playerInputState.Type = command_type.Move;
+                    _haveInput = true;
                 }
             }
         }
@@ -47,7 +49,7 @@ namespace Client
 
         public PlayerInputState GetPlayerInputCommand()
         {
-            PlayerInputState currentInput=_playerInputState;
+            PlayerInputState currentInput = _playerInputState;
             _playerInputState = new PlayerInputState();
             return currentInput;
         }

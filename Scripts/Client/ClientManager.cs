@@ -10,11 +10,9 @@ using UnityEngine.Serialization;
 
 public class ClientManager : MonoSingleton<ClientManager>
 {
-    //TODO:需要考虑单纯用List的Index作为指令的逻辑帧数的可行性（或许用Dic才可以达到效果？）
     private readonly Dictionary<int, player_input_command> _logicCommandsDic =
         new Dictionary<int, player_input_command>();
 
-    //  private readonly List<player_input_command> _logicCommandsList = new List<player_input_command>();
     public readonly Dictionary<int, player_input_command[]> CommandSetDic = new();
     private IPEndPoint _anyIP;
     private UdpClient _client;
@@ -86,7 +84,6 @@ public class ClientManager : MonoSingleton<ClientManager>
     /// <summary>
     /// 接收输入状态，将其转化为输入指令
     /// </summary>
-    /// <param name="playerInputState"></param>
     public player_input_command CreateInputCommand(PlayerInputState playerInputState)
     {
         Vector3 movePos = playerInputState.MovePos;
@@ -94,6 +91,7 @@ public class ClientManager : MonoSingleton<ClientManager>
         {
             packet_type = (int)packet_type.Command,
             id = _id,
+            command_type = (int) playerInputState.Type,
             x = movePos.x,
             y = movePos.y,
             z = movePos.z

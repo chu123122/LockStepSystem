@@ -58,8 +58,12 @@ public class UnitController : MonoBehaviour
 
     private void ReceiveCommand(player_input_command command)
     {
-        _unitState = UnitState.Move;
-        _targetPosition = new Vector3(command.x, command.y, command.z);
+        if (command.command_type == (int)command_type.Move)
+        {
+            _unitState = UnitState.Move;
+            _targetPosition = new Vector3(command.x, command.y, command.z);
+        }
+       
     }
 
     private void OnEnable()
