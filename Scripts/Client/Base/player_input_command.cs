@@ -34,8 +34,8 @@ namespace Client
     {
         public int packet_type;
 
-        public int command_type;
         public int id; // 客户端id
+        public int command_type;
         public float x, y, z; // 移动位置
     }
 

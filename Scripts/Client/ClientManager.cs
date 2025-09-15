@@ -13,7 +13,7 @@ public class ClientManager : MonoSingleton<ClientManager>
     private readonly Dictionary<int, player_input_command> _logicCommandsDic =
         new Dictionary<int, player_input_command>();
 
-    public readonly Dictionary<int, player_input_command[]> CommandSetDic = new();
+    public readonly Dictionary<int, player_input_command[]> ServerCommandSetDic = new();
     private IPEndPoint _anyIP;
     private UdpClient _client;
 
@@ -30,8 +30,7 @@ public class ClientManager : MonoSingleton<ClientManager>
     {
         base.Awake();
         _client = new UdpClient();
-        _anyIP = new IPEndPoint(IPAddress.Parse("172.19.110.40"), 8888);
-        
+        _anyIP = new IPEndPoint(IPAddress.Parse("172.31.26.64"), 8888);
     }
 
     private void Start()
@@ -81,11 +80,11 @@ public class ClientManager : MonoSingleton<ClientManager>
         return false;
     }
 
-    public bool HaveReceiveFrame(int currentFrame,int inputDelay)
+    public bool HaveReceiveFrame(int currentFrame, int inputDelay)
     {
         foreach (var frame in _logicCommandsDic.Keys)
         {
-            if(frame>=inputDelay)//获取到的指令集时间已经超过输入延迟
+            if (frame >= inputDelay) //获取到的指令集时间已经超过输入延迟
                 return true;
         }
 
@@ -103,7 +102,7 @@ public class ClientManager : MonoSingleton<ClientManager>
         {
             packet_type = (int)packet_type.Command,
             id = _id,
-            command_type = (int) playerInputState.Type,
+            command_type = (int)playerInputState.Type,
             x = movePos.x,
             y = movePos.y,
             z = movePos.z
@@ -121,7 +120,7 @@ public class ClientManager : MonoSingleton<ClientManager>
         if (_client.Available <= 0)
         {
             _lastNoResponseTime = Time.time;
-            if (Time.time - _lastNoResponseTime > NoResponseTime)//TODO 存在bug导致基本不输出信息
+            if (Time.time - _lastNoResponseTime > NoResponseTime) //TODO 存在bug导致基本不输出信息
                 Debug.Log("未接收到服务端回应" +
                           $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} ");
             return;
@@ -142,14 +141,19 @@ public class ClientManager : MonoSingleton<ClientManager>
                 Debug.LogWarning($"从服务端接收回应成功 " +
                                  $"分配客户端id：{_id}" +
                                  $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} " +
-                                 $"客户端逻辑帧(同步后)：{_gameClockManager.currentLogicFrame}");
+                                 $"客户端输入帧(同步后)：{_gameClockManager.currentInputFrame}");
                 break;
             case packet_type.CommandSet:
                 frame_packet framePacket = Common.BytesToStruct<frame_packet>(bytes);
                 int currentFrame = framePacket.frame_number;
                 player_input_command[] inputCommands = framePacket.commands;
                 int commandCount = framePacket.command_count; //TODO:不确定要如何处理
-                CommandSetDic.Add(currentFrame, inputCommands);
+                ServerCommandSetDic.Add(currentFrame, inputCommands);
+
+                Debug.LogWarning($"从服务端接收指令集成功 " +
+                                 $"指令集执行逻辑帧：{framePacket.frame_number}" +
+                                 $"客户端逻辑帧：{_gameClockManager.currentLogicFrame}" +
+                                 $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} ");
                 break;
         }
     }

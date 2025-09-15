@@ -53,13 +53,19 @@ namespace Client
 
                 _clientManager.ReceivePacketFromServer(); //接收从服务端传输过来的指令集
 
+                //TODO 注意，这里进行了逻辑的简化，我们在开始时直接忽略了输入延迟的作用,并通过硬编码让逻辑帧0的指令集只执行一次
                 executeLogicFrame = currentLogicFrame - INPUT_DELAY; //当前执行帧
-                if (_clientManager.HaveReceiveFrame(executeLogicFrame, INPUT_DELAY)) //检查执行帧的指令集是否到达
+                
+                if (_clientManager.ServerCommandSetDic.Keys.Contains(executeLogicFrame)) //检查执行帧的指令集是否到达
                 {
-                    player_input_command[] commands = _clientManager.CommandSetDic[executeLogicFrame];
+                    player_input_command[] commands = _clientManager.ServerCommandSetDic[executeLogicFrame];
                     SendCommandSetToClient(commands); //执行指令
 
+                    currentLogicFrame += 1;
                     OnGameLogicUpdate?.Invoke();
+                }
+                else if (executeLogicFrame <= 0)
+                {
                     currentLogicFrame += 1;
                 }
                 else
