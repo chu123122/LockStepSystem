@@ -78,9 +78,9 @@ struct join_packet
 
 enum class frameStatus
 {
-    Collecting, // 正在收集中
-    Ready,      // 人齐了，可以广播了
-    Dispatched  // 已经广播过了
+    Collecting,
+    Ready,
+    Dispatched
 };
 
 struct frameData

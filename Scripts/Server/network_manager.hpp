@@ -86,15 +86,11 @@ public:
         {
             if (errno == EWOULDBLOCK || errno == EAGAIN)
             {
-                // 这不是一个真正的错误！
-                // 这只是Linux在告诉你：“老兄，邮箱是空的，别再问了，先去干点别的吧。”
-                // 在这里，你应该跳过这次循环，不做任何处理。
+                // 邮箱为空
             }
             else
             {
-                // 这是一个真正的、严重的错误！
                 perror("recvfrom failed");
-                // 在这里可能需要关闭socket
             }
         }
         else

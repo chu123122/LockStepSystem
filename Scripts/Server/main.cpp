@@ -112,50 +112,55 @@ int main(void)
             int client_count = client_manager.get_client_count();
 
             // 2.处理指令阶段
+            frameData *frame_data;
             if (client_count > 0 &&
                 frame_sync_manager.check_have_frame_data(current_server_frame, client_count))
             {
-                frameData *frame_data = frame_sync_manager.get_frame_data(current_server_frame);
-                frameStatus &status = frame_data->status;
-                std::vector<player_input_command> command_set = frame_data->player_input_commands;
+                frame_data = frame_sync_manager.get_frame_data(current_server_frame);
+            }
+            else if (client_count > 0)
+            {
+                frameData temp = frame_sync_manager.create_empty_frameData(client_count);
+                frame_data = &temp;
+            }
+            frameStatus &status = frame_data->status;
+            std::vector<player_input_command> command_set = frame_data->player_input_commands;
 
-                if (status == frameStatus::Collecting)
+            if (status == frameStatus::Collecting)
+            {
+                auto now = std::chrono::high_resolution_clock::now();
+                auto age = now - frame_data->creationTime;
+
+                // 收集完成
+                if (command_set.size() == client_count)
                 {
-                    auto now = std::chrono::high_resolution_clock::now();
-                    auto age = now - frame_data->creationTime;
-
-                    // 收集完成
-                    if (command_set.size() == client_count)
-                    {
-                        status = frameStatus::Ready;
-                    }
-                    // 超时填充默认指令
-                    else if (age > TIMEOUT_DURATION)
-                    {
-                        frame_sync_manager.full_null_command_in_frame_data(*frame_data);
-                        status = frameStatus::Ready;
-                    }
+                    status = frameStatus::Ready;
                 }
-
-                if (status == frameStatus::Ready)
+                // 超时填充默认指令
+                else if (age > TIMEOUT_DURATION)
                 {
-                    std::vector<sockaddr_in> client_addrs = client_manager.get_all_client_addr();
-                    for (auto &&client_addr : client_addrs)
-                    {
-                        frame_packet packet(
-                            (int)packet_type::CommandSet,
-                            current_server_frame,
-                            command_set.size(),
-                            command_set.data());
-
-                        char send_buf[1028];
-                        int buf_len = Utils::serialized_packet(packet, send_buf);
-                        network_manager.send_buf_to_client(current_server_frame, send_buf, buf_len, client_addr);
-
-                        status = frameStatus::Dispatched;
-                    }
-                    current_server_frame++;
+                    frame_sync_manager.full_null_command_in_frame_data(*frame_data, client_count);
+                    status = frameStatus::Ready;
                 }
+            }
+            if (status == frameStatus::Ready)
+            {
+                std::vector<sockaddr_in> client_addrs = client_manager.get_all_client_addr();
+                for (auto &&client_addr : client_addrs)
+                {
+                    frame_packet packet(
+                        (int)packet_type::CommandSet,
+                        current_server_frame,
+                        command_set.size(),
+                        command_set.data());
+
+                    char send_buf[1028];
+                    int buf_len = Utils::serialized_packet(packet, send_buf);
+                    network_manager.send_buf_to_client(current_server_frame, send_buf, buf_len, client_addr);
+
+                    status = frameStatus::Dispatched;
+                }
+                current_server_frame++;
             }
 
             accumulator -= TIME_STEP;
