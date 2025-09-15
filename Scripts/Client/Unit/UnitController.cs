@@ -11,8 +11,7 @@ public enum UnitState
 
 public class UnitController : MonoBehaviour
 {
-    public float speed = 1f;
-    private Camera _camera;
+    public float speed;
     private Vector3 _targetPosition;
     private UnitState _unitState;
 
@@ -20,13 +19,9 @@ public class UnitController : MonoBehaviour
     {
         _targetPosition = transform.position;
         _unitState = UnitState.Idle;
+        speed = 10f;
     }
-
-    private void Start()
-    {
-        _camera = Camera.main;
-    }
-
+    
     private void Update()
     {
         Vector3 euler = transform.rotation.eulerAngles;
