@@ -70,6 +70,26 @@ struct join_packet
 
 #pragma pack(pop)
 
+enum class frameStatus
+{
+    Collecting, // 正在收集中
+    Ready,      // 人齐了，可以广播了
+    Dispatched  // 已经广播过了
+};
+
+struct frameData
+{
+    frameStatus status;
+    std::chrono::time_point<std::chrono::high_resolution_clock> creationTime;
+
+    std::vector<player_input_command> player_input_commands;
+    frameData()
+    {
+        this->status = frameStatus::Collecting;
+        creationTime = std::chrono::high_resolution_clock::now();
+    }
+};
+
 struct client
 {
     int id;

@@ -17,6 +17,7 @@
 
 const float SERVER_TICK_RATE = 30.0f;
 const float TIME_STEP = 1.0f / SERVER_TICK_RATE;
+const auto TIMEOUT_DURATION = std::chrono::milliseconds(200);
 int current_server_frame = 0;
 
 auto lastTime = std::chrono::high_resolution_clock::now();
@@ -27,7 +28,6 @@ int main(void)
     network_manager network_manager;
     client_manager client_manager;
     frame_sync_manager frame_sync_manager;
-    utils utils;
     if (!network_manager.init())
         printf("初始化失败");
 
@@ -70,7 +70,7 @@ int main(void)
                         client_manager.add_client_with_check(receive_client); // 添加客户端
 
                         char send_buf[1028];
-                        int buf_len = utils.serialized_packet(response_packet, send_buf);
+                        int buf_len = Utils::serialized_packet(response_packet, send_buf);
                         network_manager.send_buf_to_client(current_server_frame, send_buf, buf_len, client_addr);
                         std::cout << "成功发送客户端请求加入回应"
                                   << " 当前时间： " << std::put_time(std::localtime(&now_c), "%F %T")
@@ -85,7 +85,7 @@ int main(void)
                                   << "当前服务端已连接客户端数量：" << client_manager.get_client_count()
                                   << std::endl;
 
-                        player_input_command receive_command = utils.deserialized_command(buf);
+                        player_input_command receive_command = Utils::deserialized_command(buf);
                         frame_sync_manager.add_command_in_map(receive_command, current_server_frame);
                         break;
                     }
@@ -110,23 +110,50 @@ int main(void)
             // 2.处理指令阶段
             if (client_count > 0)
             {
-                if (frame_sync_manager.check_have_command(current_server_frame, client_count))
+                frameData *frame_data = frame_sync_manager.get_frame_data(current_server_frame);
+                frameStatus &status = frame_data->status;
+                std::vector<player_input_command> command_set = frame_data->player_input_commands;
+
+                if (status == frameStatus::Collecting)
+                {
+                    auto now = std::chrono::high_resolution_clock::now();
+                    auto age = now - frame_data->creationTime;
+
+                    // 收集完成
+                    if (command_set.size() == client_manager.get_client_count())
+                    {
+                        status = frameStatus::Ready;
+                    }
+                    // 超时填充默认指令
+                    else if (age > TIMEOUT_DURATION)
+                    {
+                        frame_sync_manager.full_null_command_in_frame_data(*frame_data);
+                        status = frameStatus::Ready;
+                    }
+                }
+
+                if (status == frameStatus::Ready)
                 {
                     std::vector<sockaddr_in> client_addrs = client_manager.get_all_client_addr();
                     for (auto &&client_addr : client_addrs)
                     {
-                        std::vector<player_input_command> command_set = frame_sync_manager.get_command_set(current_server_frame);
-                        frame_packet packet((int)packet_type::CommandSet, current_server_frame, command_set.size(), command_set.data());
+                        frame_packet packet(
+                            (int)packet_type::CommandSet,
+                            current_server_frame,
+                            command_set.size(),
+                            command_set.data());
 
                         char send_buf[1028];
-                        int buf_len = utils.serialized_packet(packet, send_buf);
+                        int buf_len = Utils::serialized_packet(packet, send_buf);
                         network_manager.send_buf_to_client(current_server_frame, send_buf, buf_len, client_addr);
+
+                        status = frameStatus::Dispatched;
                     }
+                    current_server_frame++;
                 }
             }
 
             accumulator -= TIME_STEP;
-            current_server_frame++;
 
             // 3.休眠阶段
             auto frameEndTime = std::chrono::high_resolution_clock::now();

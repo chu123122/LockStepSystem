@@ -5,15 +5,15 @@
 #include <vector>
 #include "player_input_command.hpp"
 
-class utils
+class Utils
 {
 private:
     /* data */
 public:
-    utils(/* args */);
-    ~utils();
+    Utils(/* args */);
+    ~Utils();
 
-    int serialized_packet(
+    static int serialized_packet(
         const frame_packet &send_packet,
         char *buffer)
     {
@@ -39,7 +39,7 @@ public:
         return cursor - buffer;
     }
 
-    int serialized_packet(
+    static int serialized_packet(
         const join_packet &send_packet,
         char *buffer)
     {
@@ -60,7 +60,7 @@ public:
         return cursor - buffer;
     }
 
-    player_input_command deserialized_command(char *data)
+    static player_input_command deserialized_command(char *data)
     {
         char *cursor = data;
 
@@ -88,10 +88,10 @@ public:
     }
 };
 
-utils::utils(/* args */)
+Utils::Utils(/* args */)
 {
 }
 
-utils::~utils()
+Utils::~Utils()
 {
 }

@@ -6,29 +6,29 @@ class frame_sync_manager
 {
 private:
     /* data */
-    std::map<int, std::vector<player_input_command>> commandSetMap;
+    std::map<int, frameData> frameDataMap;
 
 public:
     frame_sync_manager(/* args */);
     ~frame_sync_manager();
 
-    std::vector<player_input_command> get_command_set(int frame_count)
+    frameData *get_frame_data(int frame_count)
     {
-        if (commandSetMap.find(frame_count) == commandSetMap.end())
+        if (frameDataMap.find(frame_count) == frameDataMap.end())
         {
-            std::cout << "警告,当前帧未存在指定指令集,请检查check_have_all_command函数是否存在问题" << std::endl;
-            return std::vector<player_input_command>();
+            std::cout << "警告,当前帧未存在指定帧数据,请检查check_have_command函数是否存在问题" << std::endl;
+            return nullptr;
         }
-        return commandSetMap[frame_count];
+        return &frameDataMap[frame_count];
     }
 
     bool check_have_command(int frame_count, int client_count)
     {
         // 没有指定逻辑帧的指令集
-        if (commandSetMap.find(frame_count) == commandSetMap.end())
+        if (frameDataMap.find(frame_count) == frameDataMap.end())
             return false;
 
-        std::vector<player_input_command> &check_commands = commandSetMap[frame_count];
+        std::vector<player_input_command> &check_commands = frameDataMap[frame_count].player_input_commands;
         // 注意该处逻辑进行了简化,只检查是否有指令数量等于客户端数量
         if (check_commands.size() != client_count)
             return false;
@@ -38,7 +38,11 @@ public:
 
     void add_command_in_map(player_input_command command, int frame_count)
     {
-        commandSetMap[frame_count].push_back(command);
+        frameDataMap[frame_count].player_input_commands.push_back(command);
+    }
+    void full_null_command_in_frame_data(frameData &frame_data)
+    {
+        
     }
 };
 
