@@ -6,77 +6,84 @@ namespace Client
 {
     public class PhysicsManager : MonoSingleton<PhysicsManager>
     {
-        // 我们不再用GameObject，直接用Transform更高效
-        public List<Transform> walls; 
-
-        // 核心物理对象列表
+        public Vector2 worldSize;
+        public Vector3 worldCenter = Vector3.zero;
         private readonly List<PhysicsBase> _physicsObjects = new List<PhysicsBase>();
 
-        // 边界值，我们可以在Start时计算一次，后面直接用
+        // 边界值
         private float _topWallZ, _bottomWallZ, _rightWallX, _leftWallX;
+
 
         public override void Awake()
         {
             base.Awake();
+            worldSize = new Vector2(15f, 15f);
+            worldCenter = new Vector3(7.5f, 0, 7.5f);
+
+            _leftWallX = worldCenter.x - worldSize.x / 2f;
+            _rightWallX = worldCenter.x + worldSize.x / 2f;
+            _bottomWallZ = worldCenter.z - worldSize.y / 2f;
+            _topWallZ = worldCenter.z + worldSize.y / 2f;
+            Debug.Log(
+                $"Physics Bounds Initialized: " +
+                $"X({_leftWallX:F2} to {_rightWallX:F2}), " +
+                $"Z({_bottomWallZ:F2} to {_topWallZ:F2})");
         }
 
         private void Start()
         {
-            if (walls.Count >= 4)
-            {
-                _topWallZ = walls[0].position.z - walls[0].localScale.z / 2f;
-                _bottomWallZ = walls[1].position.z + walls[1].localScale.z / 2f;
-                _leftWallX = walls[2].position.x + walls[2].localScale.x / 2f;
-                _rightWallX = walls[3].position.x - walls[3].localScale.x / 2f;
-            }
-            
             RefreshPhysicsObjects();
         }
-        
+
         public void LogicUpdate()
         {
             foreach (var obj in _physicsObjects)
             {
+                if (!obj.TryGetComponent<BallController>(out BallController ball))
+                    continue;
+                //obj.GetComponent<UnitController>()!=null
                 obj.currentVelocity *= 0.998f;
-                obj.currentPhysicsPosition += obj.currentVelocity * GameClockManager.TIME_STEP;
+                obj.currentLogicPosition += obj.currentVelocity * GameClockManager.TIME_STEP;
 
                 //  墙壁碰撞检测与响应
                 // 检查X轴 (左右墙)
-                if (obj.currentPhysicsPosition.x - obj.ballRadius < _leftWallX)
+                if (obj.currentLogicPosition.x - ball.ballRadius < _leftWallX)
                 {
-                    obj.currentPhysicsPosition.x = _leftWallX + obj.ballRadius;
+                    obj.currentLogicPosition.x = _leftWallX + ball.ballRadius;
                     obj.currentVelocity.x *= -0.9f;
                 }
-                else if (obj.currentPhysicsPosition.x + obj.ballRadius > _rightWallX)
+                else if (obj.currentLogicPosition.x + ball.ballRadius > _rightWallX)
                 {
-                    obj.currentPhysicsPosition.x = _rightWallX - obj.ballRadius;
+                    obj.currentLogicPosition.x = _rightWallX - ball.ballRadius;
                     obj.currentVelocity.x *= -0.9f;
                 }
 
                 // 检查Z轴 (上下墙)
-                if (obj.currentPhysicsPosition.z - obj.ballRadius < _bottomWallZ)
+                if (obj.currentLogicPosition.z - ball.ballRadius < _bottomWallZ)
                 {
-                    obj.currentPhysicsPosition.z = _bottomWallZ + obj.ballRadius;
+                    obj.currentLogicPosition.z = _bottomWallZ + ball.ballRadius;
                     obj.currentVelocity.z *= -0.9f;
                 }
-                else if (obj.currentPhysicsPosition.z + obj.ballRadius > _topWallZ)
+                else if (obj.currentLogicPosition.z + ball.ballRadius > _topWallZ)
                 {
-                    obj.currentPhysicsPosition.z = _topWallZ - obj.ballRadius;
+                    obj.currentLogicPosition.z = _topWallZ - ball.ballRadius;
                     obj.currentVelocity.z *= -0.9f;
                 }
             }
 
             // 对象间碰撞 (处理物体与物体之间的关系) 
-            
+
             for (int i = 0; i < _physicsObjects.Count; i++)
             {
                 for (int j = i + 1; j < _physicsObjects.Count; j++)
                 {
-                    var ballA = _physicsObjects[i];
-                    var ballB = _physicsObjects[j];
+                    var ballA = _physicsObjects[i].GetComponent<BallController>();
+                    var ballB = _physicsObjects[j].GetComponent<BallController>();
+                    if (ballA == null ) break;
+                    else if (ballB == null ) continue;
+                    
+                    float distance = Vector3.Distance(ballA.currentLogicPosition, ballB.currentLogicPosition);
 
-                    float distance = Vector3.Distance(ballA.currentPhysicsPosition, ballB.currentPhysicsPosition);
-            
                     if (distance < (ballA.ballRadius + ballB.ballRadius))
                     {
                         ResolveCollision(ballA, ballB);
@@ -84,15 +91,16 @@ namespace Client
                 }
             }
         }
-        
+
         public void RefreshPhysicsObjects()
         {
             _physicsObjects.Clear();
             _physicsObjects.AddRange(FindObjectsOfType<PhysicsBase>());
         }
+
         private void ResolveCollision(PhysicsBase a, PhysicsBase b)
         {
-            (a.currentVelocity, b.currentVelocity) = 
+            (a.currentVelocity, b.currentVelocity) =
                 (b.currentVelocity, a.currentVelocity);
         }
     }
