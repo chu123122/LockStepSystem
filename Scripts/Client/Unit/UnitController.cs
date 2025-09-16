@@ -11,18 +11,21 @@ public enum UnitState
 
 public class UnitController : MonoBehaviour
 {
-    public float speed;
+    public float logicSpeed;
+    public float smoothTime = 0.5f;
     private Vector3 _currentLogicPosition; // 当前逻辑帧的权威位置
 
     private Vector3 _previousLogicPosition; // 上一个逻辑帧的权威位置
     private Vector3 _targetPosition;
     private UnitState _unitState;
 
+    private Vector3 _velocity = Vector3.zero;
+
     private void Awake()
     {
         _targetPosition = transform.position;
         _unitState = UnitState.Idle;
-        speed = 10f;
+        logicSpeed = 30f;
     }
 
     private void Update()
@@ -37,10 +40,11 @@ public class UnitController : MonoBehaviour
                          $"先前逻辑位置{_previousLogicPosition}，" +
                          $"当前逻辑位置{_currentLogicPosition}" +
                          $"当前t：{Time.deltaTime}");
-        transform.position = Vector3.MoveTowards(
+        transform.position = Vector3.SmoothDamp(
             transform.position,
             _currentLogicPosition,
-            Time.deltaTime);
+            ref _velocity,
+            smoothTime);
         Debug.Log($"当前渲染位置：{transform.position}，" +
                   $"先前逻辑位置{_previousLogicPosition}，" +
                   $"当前逻辑位置{_currentLogicPosition}");
@@ -72,7 +76,7 @@ public class UnitController : MonoBehaviour
                     _currentLogicPosition = Vector3.MoveTowards(
                         _currentLogicPosition,
                         _targetPosition,
-                        GameClockManager.TIME_STEP * speed);
+                        GameClockManager.TIME_STEP * logicSpeed);
                 }
                 else
                 {
