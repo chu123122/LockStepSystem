@@ -42,7 +42,10 @@ namespace Client.Unit
         public void LogicUpdate()
         {
             if (_spawnPosQueue.Count > 0)
+            {
                 InstantiateUnit(_spawnPosQueue.Dequeue());
+                PhysicsManager.Instance.RefreshPhysicsObjects();
+            }
         }
 
         public void ReceiveCommand(player_input_command command)

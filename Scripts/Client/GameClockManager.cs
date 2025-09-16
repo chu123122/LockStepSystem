@@ -19,11 +19,13 @@ namespace Client
 
         private ClientManager _clientManager;
         private InputManager _inputManager;
+        private PhysicsManager _physicsManager;
 
         private void Start()
         {
             _clientManager = ClientManager.Instance;
             _inputManager = InputManager.Instance;
+            _physicsManager= PhysicsManager.Instance;
         }
 
         public event Action OnGameLogicUpdate;
@@ -72,7 +74,8 @@ namespace Client
                 {
                     //游戏暂停等待
                 }
-
+                _physicsManager.LogicUpdate();
+                
                 accumulator -= TIME_STEP;
                 currentInputFrame += 1;
             }

@@ -5,7 +5,7 @@ using Client.Unit;
 using UnityEngine;
 
 
-public class UnitController : MonoBehaviour, IClient
+public class UnitController : PhysicsBase, IClient
 {
     public float logicSpeed;
     public float smoothTime = 0.5f;
@@ -17,8 +17,9 @@ public class UnitController : MonoBehaviour, IClient
 
     private Vector3 _velocity = Vector3.zero;
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         _targetPosition = transform.position;
         _currentLogicPosition=transform.position;
         _unitState = UnitState.Idle;
