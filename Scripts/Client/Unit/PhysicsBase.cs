@@ -7,7 +7,7 @@ namespace Client.Unit
     {
         public Vector3 currentVelocity;
         public Vector3 currentLogicPosition;
-      
+        public float ballRadius;
 
         public float smoothTime;
         private Vector3 _velocity;
@@ -15,6 +15,7 @@ namespace Client.Unit
         {
             currentVelocity = Vector3.zero;
             currentLogicPosition = transform.position;
+            ballRadius = 0.5f;
             smoothTime = 0.4f;
             _velocity = Vector3.zero;
         }

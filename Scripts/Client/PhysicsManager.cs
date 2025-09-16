@@ -39,34 +39,32 @@ namespace Client
         {
             foreach (var obj in _physicsObjects)
             {
-                if (!obj.TryGetComponent<BallController>(out BallController ball))
-                    continue;
                 //obj.GetComponent<UnitController>()!=null
                 obj.currentVelocity *= 0.998f;
                 obj.currentLogicPosition += obj.currentVelocity * GameClockManager.TIME_STEP;
 
                 //  墙壁碰撞检测与响应
                 // 检查X轴 (左右墙)
-                if (obj.currentLogicPosition.x - ball.ballRadius < _leftWallX)
+                if (obj.currentLogicPosition.x - obj.ballRadius < _leftWallX)
                 {
-                    obj.currentLogicPosition.x = _leftWallX + ball.ballRadius;
+                    obj.currentLogicPosition.x = _leftWallX + obj.ballRadius;
                     obj.currentVelocity.x *= -0.9f;
                 }
-                else if (obj.currentLogicPosition.x + ball.ballRadius > _rightWallX)
+                else if (obj.currentLogicPosition.x + obj.ballRadius > _rightWallX)
                 {
-                    obj.currentLogicPosition.x = _rightWallX - ball.ballRadius;
+                    obj.currentLogicPosition.x = _rightWallX - obj.ballRadius;
                     obj.currentVelocity.x *= -0.9f;
                 }
 
                 // 检查Z轴 (上下墙)
-                if (obj.currentLogicPosition.z - ball.ballRadius < _bottomWallZ)
+                if (obj.currentLogicPosition.z - obj.ballRadius < _bottomWallZ)
                 {
-                    obj.currentLogicPosition.z = _bottomWallZ + ball.ballRadius;
+                    obj.currentLogicPosition.z = _bottomWallZ + obj.ballRadius;
                     obj.currentVelocity.z *= -0.9f;
                 }
-                else if (obj.currentLogicPosition.z + ball.ballRadius > _topWallZ)
+                else if (obj.currentLogicPosition.z + obj.ballRadius > _topWallZ)
                 {
-                    obj.currentLogicPosition.z = _topWallZ - ball.ballRadius;
+                    obj.currentLogicPosition.z = _topWallZ - obj.ballRadius;
                     obj.currentVelocity.z *= -0.9f;
                 }
             }
@@ -77,15 +75,17 @@ namespace Client
             {
                 for (int j = i + 1; j < _physicsObjects.Count; j++)
                 {
-                    var ballA = _physicsObjects[i].GetComponent<BallController>();
-                    var ballB = _physicsObjects[j].GetComponent<BallController>();
-                    if (ballA == null ) break;
-                    else if (ballB == null ) continue;
-                    
-                    float distance = Vector3.Distance(ballA.currentLogicPosition, ballB.currentLogicPosition);
+                    var ballA = _physicsObjects[i];
+                    var ballB = _physicsObjects[j];
 
-                    if (distance < (ballA.ballRadius + ballB.ballRadius))
+                    float logicDistance = Vector3.Distance(ballA.currentLogicPosition, ballB.currentLogicPosition);
+                    float distance=Vector3.Distance(ballA.transform.position, ballA.transform.position);
+                    
+                    if (logicDistance < (ballA.ballRadius + ballB.ballRadius))
                     {
+                        Debug.Log($"球体发生碰撞，" +
+                                  $"球体A：{ballA.gameObject.name}," +
+                                  $"球体B：{ballB.gameObject.name}");
                         ResolveCollision(ballA, ballB);
                     }
                 }
@@ -102,6 +102,7 @@ namespace Client
         {
             (a.currentVelocity, b.currentVelocity) =
                 (b.currentVelocity, a.currentVelocity);
+          
         }
     }
 }
