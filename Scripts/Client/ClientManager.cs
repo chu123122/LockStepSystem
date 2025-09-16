@@ -150,10 +150,15 @@ public class ClientManager : MonoSingleton<ClientManager>
                 int commandCount = framePacket.command_count; //TODO:不确定要如何处理
                 ServerCommandSetDic.Add(currentFrame, inputCommands);
 
-                Debug.LogWarning($"从服务端接收指令集成功 " +
-                                 $"指令集执行逻辑帧：{framePacket.frame_number}" +
-                                 $"客户端逻辑帧：{_gameClockManager.currentLogicFrame}" +
-                                 $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} ");
+                foreach (var command in inputCommands)
+                {
+                    if(command.id!=-1)
+                        Debug.LogWarning($"从服务端接收非空指令集成功 " +
+                                         $"指令集执行逻辑帧：{framePacket.frame_number}" +
+                                         $"客户端逻辑帧：{_gameClockManager.currentLogicFrame}" +
+                                         $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} ");
+                }
+              
                 break;
         }
     }

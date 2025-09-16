@@ -72,9 +72,9 @@ public:
         {
             auto frameStartTime = std::chrono::high_resolution_clock::now();
             std::time_t now_c = std::chrono::system_clock::to_time_t(frameStartTime);
-            std::cout << "发送信息成功"
-                      << "发送客户端指令集 当前时间： " << std::put_time(std::localtime(&now_c), "%F %T")
-                      << std::endl;
+            // std::cout << "发送信息成功"
+            //           << "发送客户端指令集 当前时间： " << std::put_time(std::localtime(&now_c), "%F %T")
+            //           << std::endl;
         }
     }
 

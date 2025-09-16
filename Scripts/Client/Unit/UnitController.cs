@@ -34,20 +34,16 @@ public class UnitController : MonoBehaviour
         euler.x = 0;
         euler.z = 0;
         transform.rotation = Quaternion.Euler(euler);
-
-        float t = GameClockManager.Instance.accumulator / GameClockManager.TIME_STEP;
-        Debug.LogWarning($"当前渲染位置：{transform.position}，" +
-                         $"先前逻辑位置{_previousLogicPosition}，" +
-                         $"当前逻辑位置{_currentLogicPosition}" +
-                         $"当前t：{Time.deltaTime}");
+        
         transform.position = Vector3.SmoothDamp(
             transform.position,
             _currentLogicPosition,
             ref _velocity,
             smoothTime);
-        Debug.Log($"当前渲染位置：{transform.position}，" +
-                  $"先前逻辑位置{_previousLogicPosition}，" +
-                  $"当前逻辑位置{_currentLogicPosition}");
+        // transform.position = Vector3.MoveTowards(
+        //     transform.position, 
+        //     _currentLogicPosition,
+        //     smoothTime);
     }
 
     private void OnEnable()
