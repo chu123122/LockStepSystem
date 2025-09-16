@@ -37,6 +37,9 @@ namespace Client
 
         public void LogicUpdate()
         {
+            Debug.Log($"<color=green>Physics LOGIC TICK! " +
+                      $"Frame: {GameClockManager.Instance.currentLogicFrame}," +
+                      $" Object Count: {_physicsObjects.Count}</color>");
             for (int i = 0; i < _physicsObjects.Count; i++)
             {
                 PhysicsBase obj = _physicsObjects[i];

@@ -74,6 +74,7 @@ namespace Client.Unit
             GameObject unit = Instantiate(unitPrefab, clientPair.Position, Quaternion.identity);
             UnitController unitController = unit.GetComponent<UnitController>();
             unitController.ClientUnit = clientPair.ClientUnit;
+            Debug.Log($"生成单位在逻辑帧:{GameClockManager.Instance.currentLogicFrame}");
         }
     }
 }

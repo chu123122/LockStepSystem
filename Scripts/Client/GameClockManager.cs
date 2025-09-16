@@ -25,14 +25,26 @@ namespace Client
         {
             _clientManager = ClientManager.Instance;
             _inputManager = InputManager.Instance;
-            _physicsManager= PhysicsManager.Instance;
+            _physicsManager = PhysicsManager.Instance;
         }
 
         public event Action OnGameLogicUpdate;
         public event Action<player_input_command> OnReceiveCommand;
 
+        private DateTime firstTime;
+
         public void LogicUpdate()
         {
+            if (currentLogicFrame == 0)
+            {
+                firstTime = DateTime.Now;
+            }
+            else if (ClientManager.Instance.test == 2 )
+            {
+                Debug.LogWarning($"结束追赶！！！{(DateTime.Now - firstTime).ToString()},当前逻辑帧{currentLogicFrame}");
+                ClientManager.Instance.test++;
+            }
+
             accumulator += Time.deltaTime;
 
             while (accumulator >= TIME_STEP)
@@ -74,8 +86,9 @@ namespace Client
                 {
                     //游戏暂停等待
                 }
+
                 _physicsManager.LogicUpdate();
-                
+
                 accumulator -= TIME_STEP;
                 currentInputFrame += 1;
             }

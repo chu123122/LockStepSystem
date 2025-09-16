@@ -23,11 +23,24 @@ namespace Client.Unit
 
         protected virtual void RenderUpdate()
         {
+            if (gameObject.CompareTag("Debug"))
+            {
+                Debug.Log($"<color=orange>Render UPDATE! " +
+                          $"Name: {gameObject.name}, " +
+                          $"Logic Pos: {currentLogicPosition}, " +
+                          $"Render Pos: {transform.position}</color>");
+            }
+          
+
             transform.position = Vector3.SmoothDamp(
                 transform.position,
                 currentLogicPosition,
                 ref _velocity,
                 smoothTime);
+            // transform.position = Vector3.MoveTowards(
+            //     transform.position,
+            //     currentLogicPosition,
+            //     Time.deltaTime * 10f);
         }
         
     }
