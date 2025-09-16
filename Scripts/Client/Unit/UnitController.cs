@@ -34,9 +34,13 @@ public class UnitController : MonoBehaviour
 
         float t = GameClockManager.Instance.accumulator / GameClockManager.TIME_STEP;
         Debug.LogWarning($"当前渲染位置：{transform.position}，" +
-                  $"先前逻辑位置{_previousLogicPosition}，" +
-                  $"当前逻辑位置{_currentLogicPosition}");
-        transform.position = Vector3.Lerp(_previousLogicPosition, _currentLogicPosition, t);
+                         $"先前逻辑位置{_previousLogicPosition}，" +
+                         $"当前逻辑位置{_currentLogicPosition}" +
+                         $"当前t：{Time.deltaTime}");
+        transform.position = Vector3.MoveTowards(
+            transform.position,
+            _currentLogicPosition,
+            Time.deltaTime);
         Debug.Log($"当前渲染位置：{transform.position}，" +
                   $"先前逻辑位置{_previousLogicPosition}，" +
                   $"当前逻辑位置{_currentLogicPosition}");
