@@ -86,6 +86,8 @@ public class UnitController : MonoBehaviour, IClient
 
     public void ReceiveCommand(player_input_command command)
     {
+        if (command.id != ClientUnit.ID) return;
+        
         if (command.command_type == (int)command_type.Move)
         {
             _unitState = UnitState.Move;
