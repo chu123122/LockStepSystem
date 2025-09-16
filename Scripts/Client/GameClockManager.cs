@@ -64,7 +64,7 @@ namespace Client
                     currentLogicFrame += 1;
                     OnGameLogicUpdate?.Invoke();
                 }
-                else if (executeLogicFrame <= 0)
+                else if (executeLogicFrame < 0)
                 {
                     currentLogicFrame += 1;
                 }

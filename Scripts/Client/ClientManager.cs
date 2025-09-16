@@ -152,13 +152,13 @@ public class ClientManager : MonoSingleton<ClientManager>
 
                 foreach (var command in inputCommands)
                 {
-                    if(command.id!=-1)
+                    if (command.id != -1)
                         Debug.LogWarning($"从服务端接收非空指令集成功 " +
                                          $"指令集执行逻辑帧：{framePacket.frame_number}" +
                                          $"客户端逻辑帧：{_gameClockManager.currentLogicFrame}" +
                                          $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} ");
                 }
-              
+
                 break;
         }
     }

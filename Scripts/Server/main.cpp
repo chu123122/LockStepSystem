@@ -79,6 +79,24 @@ int main(void)
                         // 客户端初始加入的创建单位指令
                         player_input_command create_command(receive_client.id, (int)command_type::Create, 0, 0, 0);
                         frame_sync_manager.add_command_in_map(create_command, current_server_frame);
+
+                        // 发送历史frameData
+                        for (int i = 0; i < current_server_frame; i++)
+                        {
+                            frameData *history_frameData = frame_sync_manager.get_frame_data(i);
+                            frameStatus &status = history_frameData->status;
+                            const std::vector<player_input_command> &command_set = history_frameData->player_input_commands;
+                            frame_packet packet(
+                                (int)packet_type::CommandSet,
+                                i,
+                                command_set.size(),
+                                command_set.data());
+
+                            char send_buf[1028];
+                            int buf_len = Utils::serialized_packet(packet, send_buf);
+                            network_manager.send_buf_to_client(current_server_frame, send_buf, buf_len, client_addr);
+                        }
+
                         break;
                     }
 
