@@ -74,6 +74,7 @@ int main(void)
                         network_manager.send_buf_to_client(current_server_frame, send_buf, buf_len, client_addr);
                         std::cout << "成功发送客户端请求加入回应"
                                   << " 当前时间： " << std::put_time(std::localtime(&now_c), "%F %T")
+                                  << "当前服务端逻辑帧" << current_server_frame
                                   << std::endl;
 
                         // 客户端初始加入的创建单位指令

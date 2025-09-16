@@ -84,9 +84,9 @@ namespace Client
                     
                     if (logicDistance < (ballA.ballRadius + ballB.ballRadius))
                     {
-                        Debug.Log($"球体发生碰撞，" +
-                                  $"球体A：{ballA.gameObject.name}," +
-                                  $"球体B：{ballB.gameObject.name}");
+                        // Debug.Log($"球体发生碰撞，" +
+                        //           $"球体A：{ballA.gameObject.name}," +
+                        //           $"球体B：{ballB.gameObject.name}");
                         ResolveCollision(ballA, ballB);
                     }
                 }

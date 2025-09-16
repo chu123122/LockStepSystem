@@ -161,15 +161,20 @@ public class ClientManager : MonoSingleton<ClientManager>
                 foreach (var command in inputCommands)
                 {
                     if (command.id != -1)
+                    {
+                        test++;
                         Debug.LogWarning($"从服务端接收非空指令集成功 " +
-                                         $"指令集执行逻辑帧：{framePacket.frame_number}" +
-                                         $"客户端逻辑帧：{_gameClockManager.currentLogicFrame}" +
-                                         $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} ");
+                                      $"非空指令类型{(command_type)command.command_type}"+
+                                      $"指令集执行逻辑帧：{framePacket.frame_number}" +
+                                      $"客户端逻辑帧：{_gameClockManager.currentLogicFrame}" +
+                                      $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} ");}
                 }
 
                 break;
         }
     }
+
+    private int test = 0;
 
     /// <summary>
     /// 发送连接请求给服务端
