@@ -1,21 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using Client;
+using Client.Unit;
 using UnityEngine;
 
-public enum UnitState
-{
-    Idle = 0,
-    Move = 1,
-}
 
-public class UnitController : MonoBehaviour
+public class UnitController : MonoBehaviour, IClient
 {
     public float logicSpeed;
     public float smoothTime = 0.5f;
-    private Vector3 _currentLogicPosition; // 当前逻辑帧的权威位置
 
-    private Vector3 _previousLogicPosition; // 上一个逻辑帧的权威位置
+    private ClientUnit _clientUnit;
+    private Vector3 _currentLogicPosition; // 当前逻辑帧的权威位置
     private Vector3 _targetPosition;
     private UnitState _unitState;
 
@@ -34,7 +30,7 @@ public class UnitController : MonoBehaviour
         euler.x = 0;
         euler.z = 0;
         transform.rotation = Quaternion.Euler(euler);
-        
+
         transform.position = Vector3.SmoothDamp(
             transform.position,
             _currentLogicPosition,
@@ -50,17 +46,22 @@ public class UnitController : MonoBehaviour
     {
         GameClockManager.Instance.OnGameLogicUpdate += LogicUpdate;
         GameClockManager.Instance.OnReceiveCommand += ReceiveCommand;
+
+        ClientManager.Instance.OnConnectServer += OnConnectServer;
     }
 
     private void OnDisable()
     {
         GameClockManager.Instance.OnGameLogicUpdate -= LogicUpdate;
         GameClockManager.Instance.OnReceiveCommand -= ReceiveCommand;
+
+        ClientManager.Instance.OnConnectServer -= OnConnectServer;
     }
 
-    private void LogicUpdate()
+    public ClientUnit ClientUnit { get; set; }
+
+    public void LogicUpdate()
     {
-        _previousLogicPosition = _currentLogicPosition;
         switch (_unitState)
         {
             case UnitState.Idle:
@@ -68,7 +69,6 @@ public class UnitController : MonoBehaviour
             case UnitState.Move:
                 if (Vector3.Distance(_currentLogicPosition, _targetPosition) > 0.1f)
                 {
-                    // transform.position = Vector3.MoveTowards(transform.position, _targetPosition, GameClockManager.TIME_STEP* speed);
                     _currentLogicPosition = Vector3.MoveTowards(
                         _currentLogicPosition,
                         _targetPosition,
@@ -84,12 +84,18 @@ public class UnitController : MonoBehaviour
         }
     }
 
-    private void ReceiveCommand(player_input_command command)
+    public void ReceiveCommand(player_input_command command)
     {
         if (command.command_type == (int)command_type.Move)
         {
             _unitState = UnitState.Move;
             _targetPosition = new Vector3(command.x, command.y, command.z);
         }
+    }
+
+
+    public void OnConnectServer(ClientUnit client)
+    {
+        ClientUnit = client;
     }
 }

@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using Client;
+using Client.Unit;
 using UnityEngine.Serialization;
 
 public class ClientManager : MonoSingleton<ClientManager>
@@ -18,6 +19,7 @@ public class ClientManager : MonoSingleton<ClientManager>
     private UdpClient _client;
 
     private GameClockManager _gameClockManager;
+    public event Action<ClientUnit> OnConnectServer;
     private int _id = -1;
 
     private bool _isConnect = false;
@@ -138,6 +140,12 @@ public class ClientManager : MonoSingleton<ClientManager>
                 _isConnect = true;
                 _id = joinPacket.id;
                 _gameClockManager.currentInputFrame = joinPacket.frame_number; //同步输入逻辑帧
+                
+                ClientUnit client = new ClientUnit()
+                {
+                    ID = _id
+                };
+                OnConnectServer?.Invoke(client);
                 Debug.LogWarning($"从服务端接收回应成功 " +
                                  $"分配客户端id：{_id}" +
                                  $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} " +

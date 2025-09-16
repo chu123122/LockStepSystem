@@ -83,8 +83,7 @@ namespace Client
         {
             foreach (var inputCommand in inputCommands)
             {
-                if (inputCommand.id != -1 &&
-                    inputCommand.id == _clientManager.GetClientId())
+                if (inputCommand.id != -1)
                     OnReceiveCommand?.Invoke(inputCommand);
             }
         }
