@@ -16,7 +16,7 @@ namespace Client.Unit
             currentVelocity = Vector3.zero;
             currentLogicPosition = transform.position;
             ballRadius = 0.5f;
-            smoothTime = 0.4f;
+            smoothTime = 0.1f;
             _velocity = Vector3.zero;
         }
         

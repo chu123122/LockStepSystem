@@ -37,12 +37,13 @@ namespace Client
 
         public void LogicUpdate()
         {
-            foreach (var obj in _physicsObjects)
+            for (int i = 0; i < _physicsObjects.Count; i++)
             {
-                //obj.GetComponent<UnitController>()!=null
-                obj.currentVelocity *= 0.998f;
+                PhysicsBase obj = _physicsObjects[i];
+                obj.currentVelocity *= 0.995f;
                 obj.currentLogicPosition += obj.currentVelocity * GameClockManager.TIME_STEP;
-
+                //obj.GetComponent<UnitController>()!=null
+                
                 //  墙壁碰撞检测与响应
                 // 检查X轴 (左右墙)
                 if (obj.currentLogicPosition.x - obj.ballRadius < _leftWallX)
@@ -79,7 +80,7 @@ namespace Client
                     var ballB = _physicsObjects[j];
 
                     float logicDistance = Vector3.Distance(ballA.currentLogicPosition, ballB.currentLogicPosition);
-                    float distance=Vector3.Distance(ballA.transform.position, ballA.transform.position);
+                    float distance=Vector3.Distance(ballA.transform.position, ballB.transform.position);
                     
                     if (logicDistance < (ballA.ballRadius + ballB.ballRadius))
                     {
