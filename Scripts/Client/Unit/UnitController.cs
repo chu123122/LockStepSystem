@@ -20,6 +20,7 @@ public class UnitController : MonoBehaviour, IClient
     private void Awake()
     {
         _targetPosition = transform.position;
+        _currentLogicPosition=transform.position;
         _unitState = UnitState.Idle;
         logicSpeed = 30f;
     }
