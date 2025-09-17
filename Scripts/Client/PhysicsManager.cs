@@ -6,6 +6,9 @@ namespace Client
 {
     public class PhysicsManager : MonoSingleton<PhysicsManager>
     {
+        // 32位的FNV-1a哈希算法的初始“种子”和“质数”
+        private const uint FnvPrime = 16777619;
+        private const uint FnvOffsetBasis = 2166136261;
         public Vector2 worldSize;
         public Vector3 worldCenter = Vector3.zero;
         private readonly List<PhysicsBase> _physicsObjects = new List<PhysicsBase>();
@@ -37,16 +40,19 @@ namespace Client
 
         public void LogicUpdate()
         {
-            Debug.Log($"<color=green>Physics LOGIC TICK! " +
-                      $"Frame: {GameClockManager.Instance.currentLogicFrame}," +
-                      $" Object Count: {_physicsObjects.Count}</color>");
+            // Debug.Log($"<color=green>Physics LOGIC TICK! " +
+            //           $"Frame: {GameClockManager.Instance.currentLogicFrame}," +
+            //           $" Object Count: {_physicsObjects.Count}</color>");
             for (int i = 0; i < _physicsObjects.Count; i++)
             {
                 PhysicsBase obj = _physicsObjects[i];
-                obj.currentVelocity *= 0.995f;
+                float velocityValue = Vector3.Magnitude(obj.currentVelocity);
+                if (velocityValue < 0.1f)
+                    obj.currentVelocity = Vector3.zero;
+                else
+                    Debug.Log(velocityValue);
+                obj.currentVelocity *= 0.98f;
                 obj.currentLogicPosition += obj.currentVelocity * GameClockManager.TIME_STEP;
-                //obj.GetComponent<UnitController>()!=null
-                
                 //  墙壁碰撞检测与响应
                 // 检查X轴 (左右墙)
                 if (obj.currentLogicPosition.x - obj.ballRadius < _leftWallX)
@@ -83,13 +89,14 @@ namespace Client
                     var ballB = _physicsObjects[j];
 
                     float logicDistance = Vector3.Distance(ballA.currentLogicPosition, ballB.currentLogicPosition);
-                    float distance=Vector3.Distance(ballA.transform.position, ballB.transform.position);
-                    
-                    if (logicDistance < (ballA.ballRadius + ballB.ballRadius))
+                    float distance = Vector3.Distance(ballA.transform.position, ballB.transform.position);
+
+                    if (ballA.name != ballB.name &&
+                        logicDistance < (ballA.ballRadius + ballB.ballRadius))
                     {
-                        // Debug.Log($"球体发生碰撞，" +
-                        //           $"球体A：{ballA.gameObject.name}," +
-                        //           $"球体B：{ballB.gameObject.name}");
+                        Debug.Log($"球体发生碰撞，" +
+                                  $"球体A：{ballA.gameObject.name}," +
+                                  $"球体B：{ballB.gameObject.name}");
                         ResolveCollision(ballA, ballB);
                     }
                 }
@@ -102,11 +109,50 @@ namespace Client
             _physicsObjects.AddRange(FindObjectsOfType<PhysicsBase>());
         }
 
+        public uint GetWorldStateHash()
+        {
+            uint hash = FnvOffsetBasis;
+
+            _physicsObjects.Sort((a, b)
+                => a.gameObject.GetInstanceID().CompareTo(b.gameObject.GetInstanceID()));
+            foreach (var obj in _physicsObjects)
+            {
+                hash = UpdateHash(hash, obj.currentLogicPosition);
+                hash = UpdateHash(hash, obj.currentVelocity);
+            }
+
+            return hash;
+        }
+
+// 把一个Vector3的二进制数据，“混合”进当前的哈希值
+        private uint UpdateHash(uint currentHash, Vector3 value)
+        {
+            byte[] xBytes = System.BitConverter.GetBytes(value.x);
+            byte[] yBytes = System.BitConverter.GetBytes(value.y);
+            byte[] zBytes = System.BitConverter.GetBytes(value.z);
+
+            for (int i = 0; i < 4; i++)
+            {
+                currentHash = (currentHash ^ xBytes[i]) * FnvPrime;
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                currentHash = (currentHash ^ yBytes[i]) * FnvPrime;
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                currentHash = (currentHash ^ zBytes[i]) * FnvPrime;
+            }
+
+            return currentHash;
+        }
+
         private void ResolveCollision(PhysicsBase a, PhysicsBase b)
         {
             (a.currentVelocity, b.currentVelocity) =
                 (b.currentVelocity, a.currentVelocity);
-          
         }
     }
 }
