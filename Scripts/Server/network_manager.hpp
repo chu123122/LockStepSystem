@@ -66,7 +66,14 @@ public:
         int send_value = sendto(serverSocket, buf, buf_len, 0, (sockaddr *)&client_addr, sizeof(sockaddr_in));
         if (send_value < 0)
         {
-            perror("send failed");
+            if (errno == EWOULDBLOCK || errno == EAGAIN)
+            {
+                printf("Warning: send buffer for a client is full. Packet might be dropped for this frame.\n");
+            }
+            else
+            {
+                perror("sendto failed with a critical error");
+            }
         }
         else
         {
