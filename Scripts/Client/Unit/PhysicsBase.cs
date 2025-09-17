@@ -17,49 +17,20 @@ namespace Client.Unit
             currentVelocity = Vector3.zero;
             currentLogicPosition = transform.position;
             ballRadius = 0.5f;
-            smoothTime = 0.3f;
+            //过小，会导致渲染帧等待逻辑帧，出现停顿现象
+            //过大，会导致渲染帧未更新完逻辑帧就进行下一次更新，出现隔空碰撞现象
+            smoothTime = 0.25f;
             _velocity = Vector3.zero;
         }
         
 
         protected virtual void RenderUpdate()
         {
-            string message = $"<color=orange>Render UPDATE! " +
-                             $"Name: {gameObject.name}, " +
-                             $"Logic Pos: {currentLogicPosition}, " +
-                             $"Render Pos: {transform.position}</color>";
-            if(gameObject.CompareTag("Debug"))
-                Debug.Log(message);
-            if (ClientManager.Instance.testDic.TryGetValue(gameObject.name, out List<string> strings))
-            {
-                strings.Add(message);
-            }
-            else
-            {
-                ClientManager.Instance.testDic.Add(gameObject.name, new List<string>()
-                {
-                    message
-                });
-            }
-            transform.position = currentLogicPosition;
-            // if (ClientManager.Instance.test < 2)
-            // {
-            //     transform.position = currentLogicPosition;
-            // }
-            // else
-            // {
-            //     transform.position = Vector3.SmoothDamp(
-            //         transform.position,
-            //         currentLogicPosition,
-            //         ref _velocity,
-            //         smoothTime);
-            // }
-
-          
-            // transform.position = Vector3.MoveTowards(
-            //     transform.position,
-            //     currentLogicPosition,
-            //     Time.deltaTime * 10f);
+            transform.position = Vector3.SmoothDamp(
+                transform.position,
+                currentLogicPosition,
+                ref _velocity,
+                smoothTime);
         }
         
     }

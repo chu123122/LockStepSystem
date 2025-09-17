@@ -31,28 +31,10 @@ namespace Client
         public event Action OnGameLogicUpdate;
         public event Action<player_input_command> OnReceiveCommand;
 
-        private DateTime firstTime;
 
         
         public void LogicUpdate()
         {
-            if (currentLogicFrame == 0)
-            {
-                firstTime = DateTime.Now;
-            }
-            else if (ClientManager.Instance.test == 2 )
-            {
-                Debug.LogWarning($"结束追赶！！！{(DateTime.Now - firstTime).ToString()},当前逻辑帧{currentLogicFrame}");
-                ClientManager.Instance.test++;
-                foreach (var strings in ClientManager.Instance.testDic.Values)
-                {
-                    foreach (string message in strings)
-                    {
-                      //  Debug.Log(message);
-                    }
-                }
-            }
-
             accumulator += Time.deltaTime;
 
             while (accumulator >= TIME_STEP)
@@ -75,7 +57,7 @@ namespace Client
 
                 _clientManager.ReceivePacketFromServer(); //接收从服务端传输过来的指令集
 
-                //TODO 注意，这里进行了逻辑的简化，我们在开始时直接忽略了输入延迟的作用,并通过硬编码让逻辑帧0的指令集只执行一次
+                //TODO 注意，这里进行了逻辑的简化，我们在开始时直接忽略了输入延迟的作用
                 executeLogicFrame = currentLogicFrame - INPUT_DELAY; //当前执行帧
 
                 if (_clientManager.ServerCommandSetDic.Keys.Contains(executeLogicFrame)) //检查执行帧的指令集是否到达

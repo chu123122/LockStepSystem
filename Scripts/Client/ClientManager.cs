@@ -162,7 +162,6 @@ public class ClientManager : MonoSingleton<ClientManager>
                 {
                     if (command.id != -1)
                     {
-                        if ((command_type)command.command_type == command_type.Create) test += 1;//TODO
                         Debug.LogWarning($"从服务端接收非空指令集成功 " +
                                       $"非空指令类型{(command_type)command.command_type}"+
                                       $"指令集执行逻辑帧：{framePacket.frame_number}" +
@@ -173,9 +172,6 @@ public class ClientManager : MonoSingleton<ClientManager>
                 break;
         }
     }
-
-    public int test = 0;
-    public Dictionary<string,List<string>> testDic = new ();
     
     /// <summary>
     /// 发送连接请求给服务端
