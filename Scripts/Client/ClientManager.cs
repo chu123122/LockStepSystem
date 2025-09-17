@@ -132,7 +132,7 @@ public class ClientManager : MonoSingleton<ClientManager>
         //截取头部作为特征码
         packet_header packetHeader = Common.BytesToStruct<packet_header>(bytes);
         packet_type packetType = (packet_type)packetHeader.packet_type;
-
+        
         switch (packetType)
         {
             case packet_type.Response:
@@ -140,6 +140,7 @@ public class ClientManager : MonoSingleton<ClientManager>
                 _isConnect = true;
                 _id = joinPacket.id;
                 _gameClockManager.currentInputFrame = joinPacket.frame_number; //同步输入逻辑帧
+                _gameClockManager.replayFrame = joinPacket.frame_number;//确定历史和加入后的界限
                 
                 ClientUnit client = new ClientUnit()
                 {

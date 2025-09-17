@@ -21,6 +21,8 @@ namespace Client
         private InputManager _inputManager;
         private PhysicsManager _physicsManager;
 
+        public int replayFrame = 0;
+
         private void Start()
         {
             _clientManager = ClientManager.Instance;
@@ -82,6 +84,13 @@ namespace Client
                 accumulator -= TIME_STEP;
                 currentInputFrame += 1;
             }
+        }
+
+        public bool IsReplayTime()
+        {
+            if(currentLogicFrame<=replayFrame)
+                return true;
+            return false;
         }
 
 

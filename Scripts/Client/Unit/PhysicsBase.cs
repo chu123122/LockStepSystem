@@ -26,6 +26,15 @@ namespace Client.Unit
 
         protected virtual void RenderUpdate()
         {
+            if (GameClockManager.Instance.IsReplayTime())
+            {
+                smoothTime = 0.03f;
+            }
+            else
+            {
+                smoothTime = 0.25f;
+            }
+           
             transform.position = Vector3.SmoothDamp(
                 transform.position,
                 currentLogicPosition,
