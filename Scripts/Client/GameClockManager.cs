@@ -33,6 +33,7 @@ namespace Client
 
         private DateTime firstTime;
 
+        
         public void LogicUpdate()
         {
             if (currentLogicFrame == 0)
@@ -43,6 +44,13 @@ namespace Client
             {
                 Debug.LogWarning($"结束追赶！！！{(DateTime.Now - firstTime).ToString()},当前逻辑帧{currentLogicFrame}");
                 ClientManager.Instance.test++;
+                foreach (var strings in ClientManager.Instance.testDic.Values)
+                {
+                    foreach (string message in strings)
+                    {
+                      //  Debug.Log(message);
+                    }
+                }
             }
 
             accumulator += Time.deltaTime;
@@ -76,6 +84,7 @@ namespace Client
                     SendCommandSetToClient(commands); //执行指令
 
                     currentLogicFrame += 1;
+                    _physicsManager.LogicUpdate();
                     OnGameLogicUpdate?.Invoke();
                 }
                 else if (executeLogicFrame < 0)
@@ -87,7 +96,6 @@ namespace Client
                     //游戏暂停等待
                 }
 
-                _physicsManager.LogicUpdate();
 
                 accumulator -= TIME_STEP;
                 currentInputFrame += 1;

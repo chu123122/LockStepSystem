@@ -32,7 +32,7 @@ public class ClientManager : MonoSingleton<ClientManager>
     {
         base.Awake();
         _client = new UdpClient();
-        _anyIP = new IPEndPoint(IPAddress.Parse("172.31.29.219"), 8888);
+        _anyIP = new IPEndPoint(IPAddress.Parse("172.26.37.195"), 8888);
     }
 
     private void Start()
@@ -175,6 +175,7 @@ public class ClientManager : MonoSingleton<ClientManager>
     }
 
     public int test = 0;
+    public Dictionary<string,List<string>> testDic = new ();
     
     /// <summary>
     /// 发送连接请求给服务端
