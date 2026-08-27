@@ -23,13 +23,13 @@ namespace Client
             return arr;
         }
 
-        //反序列化byte[]为 T
-        public static T BytesToStruct<T>(byte[] bytes) where T : struct
+        //反序列化byte[]为 T,offset 用于跳过包头(协议 = [PacketHeader][body])
+        public static T BytesToStruct<T>(byte[] bytes, int offset = 0) where T : struct
         {
             GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             try
             {
-                return (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
+                return (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject() + offset, typeof(T));
             }
             finally
             {

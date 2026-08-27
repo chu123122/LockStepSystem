@@ -50,6 +50,15 @@ ExportedObj/
 *.unityproj
 *.sln
 *.slnx
+
+# .NET 编译产物
+bin/
+obj/
+
+# 例外:dotnet/ 服务端工程文件是源码(与 Unity 生成物相反),必须跟踪
+!dotnet/LockStepCore/LockStepCore.csproj
+!dotnet/LockStepServer/LockStepServer.csproj
+!dotnet/LockStepSystem.sln
 *.suo
 *.tmp
 *.user

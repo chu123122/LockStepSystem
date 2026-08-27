@@ -11,10 +11,10 @@ using UnityEngine.Serialization;
 
 public class ClientManager : MonoSingleton<ClientManager>
 {
-    private readonly Dictionary<int, player_input_command> _logicCommandsDic =
-        new Dictionary<int, player_input_command>();
+    private readonly Dictionary<int, PlayerInputCommand> _logicCommandsDic =
+        new Dictionary<int, PlayerInputCommand>();
 
-    public readonly Dictionary<int, player_input_command[]> ServerCommandSetDic = new();
+    public readonly Dictionary<int, PlayerInputCommand[]> ServerCommandSetDic = new();
     private IPEndPoint _anyIP;
     private UdpClient _client;
 
@@ -32,7 +32,7 @@ public class ClientManager : MonoSingleton<ClientManager>
     {
         base.Awake();
         _client = new UdpClient();
-        _anyIP = new IPEndPoint(IPAddress.Parse("172.21.238.149"), 8888);
+        _anyIP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888);
     }
 
     private void Start()
@@ -72,7 +72,7 @@ public class ClientManager : MonoSingleton<ClientManager>
             return;
         }
 
-        SendPacketToServer(command, packet_type.Command);
+        SendPacketToServer(command, PacketType.Command);
     }
 
     public bool HaveInputCommandInFrame(int currentFrame)
@@ -97,12 +97,11 @@ public class ClientManager : MonoSingleton<ClientManager>
     /// <summary>
     /// 接收输入状态，将其转化为输入指令
     /// </summary>
-    public player_input_command CreateInputCommand(PlayerInputState playerInputState)
+    public PlayerInputCommand CreateInputCommand(PlayerInputState playerInputState)
     {
         Vector3 movePos = playerInputState.MovePos;
-        player_input_command playerInputCommand = new player_input_command()
+        PlayerInputCommand playerInputCommand = new PlayerInputCommand()
         {
-            packet_type = (int)packet_type.Command,
             id = _id,
             command_type = (int)playerInputState.Type,
             x = movePos.x,
@@ -112,7 +111,7 @@ public class ClientManager : MonoSingleton<ClientManager>
         return playerInputCommand;
     }
 
-    public void AddLocalPlayerInputCommand(player_input_command playerInputCommand, int currentFrame)
+    public void AddLocalPlayerInputCommand(PlayerInputCommand playerInputCommand, int currentFrame)
     {
         _logicCommandsDic.Add(currentFrame, playerInputCommand);
     }
@@ -130,18 +129,19 @@ public class ClientManager : MonoSingleton<ClientManager>
 
         byte[] bytes = _client.Receive(ref _anyIP);
         //截取头部作为特征码
-        packet_header packetHeader = Common.BytesToStruct<packet_header>(bytes);
-        packet_type packetType = (packet_type)packetHeader.packet_type;
-        
+        PacketHeader packetHeader = Common.BytesToStruct<PacketHeader>(bytes);
+        PacketType packetType = (PacketType)packetHeader.packet_type;
+
         switch (packetType)
         {
-            case packet_type.Response:
-                join_packet joinPacket = Common.BytesToStruct<join_packet>(bytes);
+            case PacketType.Response:
+                //头部之后才是 body(跳过 4 字节头)
+                JoinPacket joinPacket = Common.BytesToStruct<JoinPacket>(bytes, 4);
                 _isConnect = true;
                 _id = joinPacket.id;
                 _gameClockManager.currentInputFrame = joinPacket.frame_number; //同步输入逻辑帧
                 _gameClockManager.replayFrame = joinPacket.frame_number;//确定历史和加入后的界限
-                
+
                 ClientUnit client = new ClientUnit()
                 {
                     ID = _id
@@ -152,10 +152,10 @@ public class ClientManager : MonoSingleton<ClientManager>
                                  $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} " +
                                  $"客户端输入帧(同步后)：{_gameClockManager.currentInputFrame}");
                 break;
-            case packet_type.CommandSet:
-                frame_packet framePacket = Common.BytesToStruct<frame_packet>(bytes);
+            case PacketType.CommandSet:
+                FramePacket framePacket = Common.BytesToStruct<FramePacket>(bytes, 4);
                 int currentFrame = framePacket.frame_number;
-                player_input_command[] inputCommands = framePacket.commands;
+                PlayerInputCommand[] inputCommands = framePacket.commands;
                 int commandCount = framePacket.command_count; //TODO:不确定要如何处理
                 ServerCommandSetDic.Add(currentFrame, inputCommands);
 
@@ -164,7 +164,7 @@ public class ClientManager : MonoSingleton<ClientManager>
                     if (command.id != -1)
                     {
                         Debug.LogWarning($"从服务端接收非空指令集成功 " +
-                                      $"非空指令类型{(command_type)command.command_type}"+
+                                      $"非空指令类型{(CommandType)command.command_type}"+
                                       $"指令集执行逻辑帧：{framePacket.frame_number}" +
                                       $"客户端逻辑帧：{_gameClockManager.currentLogicFrame}" +
                                       $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} ");}
@@ -173,46 +173,49 @@ public class ClientManager : MonoSingleton<ClientManager>
                 break;
         }
     }
-    
+
     /// <summary>
     /// 发送连接请求给服务端
     /// </summary>
     private void SendJoinRequest()
     {
-        join_packet joinPacket = new join_packet()
-        {
-            packet_type = (int)packet_type.Join,
-        };
-        SendPacketToServer(joinPacket, packet_type.Join);
+        SendPacketToServer(new PacketHeader { packet_type = (int)PacketType.Join }, PacketType.Join);
     }
 
-    private void SendPacketToServer(object packet, packet_type type)
+    private void SendPacketToServer(object packet, PacketType type)
     {
         byte[] myData = Array.Empty<byte>();
         int sendValue = 0;
         switch (type)
         {
-            //发送请求连接
-            case packet_type.Join:
-                join_packet joinPacket = (join_packet)packet;
-                myData = Common.StructToBytes(joinPacket);
-                sendValue = _client.Send(myData, myData.Length, _anyIP);
+            //发送请求连接(服务器只读头部,body 为空)
+            case PacketType.Join:
+                myData = Common.StructToBytes((PacketHeader)packet);
                 break;
-            //发送当前指令
-            case packet_type.Command:
-                player_input_command command = (player_input_command)packet;
-                myData = Common.StructToBytes(command);
-                sendValue = _client.Send(myData, myData.Length, _anyIP);
+            //发送当前指令:头部(4B)+ 指令 body
+            case PacketType.Command:
+                myData = Combine(
+                    Common.StructToBytes(new PacketHeader { packet_type = (int)PacketType.Command }),
+                    Common.StructToBytes((PlayerInputCommand)packet));
                 break;
             default:
                 Debug.LogError("未知错误，无法判定发送往服务器包类型");
-                break;
+                return;
         }
 
+        sendValue = _client.Send(myData, myData.Length, _anyIP);
         Debug.Log($"发送数据包往服务端成功 " +
                   $"数据包类型：{type}" +
                   $"发送返回值：{sendValue}" +
                   $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} " +
                   $"客户端逻辑帧：{_gameClockManager.currentLogicFrame}");
+    }
+
+    private static byte[] Combine(byte[] head, byte[] tail)
+    {
+        byte[] result = new byte[head.Length + tail.Length];
+        Array.Copy(head, result, head.Length);
+        Array.Copy(tail, 0, result, head.Length, tail.Length);
+        return result;
     }
 }

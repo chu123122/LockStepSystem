@@ -31,7 +31,7 @@ namespace Client
         }
 
         public event Action OnGameLogicUpdate;
-        public event Action<player_input_command> OnReceiveCommand;
+        public event Action<PlayerInputCommand> OnReceiveCommand;
 
 
         
@@ -44,7 +44,7 @@ namespace Client
                 Debug.LogError($"当前输入帧：{currentInputFrame}，当前逻辑帧：{currentLogicFrame}");
                 //从输入管理器,收集输入创建指令
                 PlayerInputState playerInputState = _inputManager.GetPlayerInputCommand();
-                player_input_command command = _clientManager.CreateInputCommand(playerInputState);
+                PlayerInputCommand command = _clientManager.CreateInputCommand(playerInputState);
                 if (_inputManager.GetPlayerInput())
                 {
                     _inputManager.ResetInput();
@@ -64,7 +64,7 @@ namespace Client
 
                 if (_clientManager.ServerCommandSetDic.Keys.Contains(executeLogicFrame)) //检查执行帧的指令集是否到达
                 {
-                    player_input_command[] commands = _clientManager.ServerCommandSetDic[executeLogicFrame];
+                    PlayerInputCommand[] commands = _clientManager.ServerCommandSetDic[executeLogicFrame];
                     SendCommandSetToClient(commands); //执行指令
 
                     currentLogicFrame += 1;
@@ -94,7 +94,7 @@ namespace Client
         }
 
 
-        private void SendCommandSetToClient(player_input_command[] inputCommands)
+        private void SendCommandSetToClient(PlayerInputCommand[] inputCommands)
         {
             foreach (var inputCommand in inputCommands)
             {

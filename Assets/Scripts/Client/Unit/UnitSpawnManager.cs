@@ -48,9 +48,9 @@ namespace Client.Unit
             }
         }
 
-        public void ReceiveCommand(player_input_command command)
+        public void ReceiveCommand(PlayerInputCommand command)
         {
-            if (command.command_type == (int)command_type.Create)
+            if (command.command_type == (int)CommandType.Create)
             {
                 _spawnPosQueue.Enqueue(new ClientUnitWithVec()
                 {

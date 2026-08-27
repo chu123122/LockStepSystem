@@ -31,7 +31,7 @@ namespace Client
                     targetPosition.y = transform.position.y;
 
                     _playerInputState.MovePos = targetPosition;
-                    _playerInputState.Type = command_type.Move;
+                    _playerInputState.Type = CommandType.Move;
                     _haveInput = true;
                 }
             }

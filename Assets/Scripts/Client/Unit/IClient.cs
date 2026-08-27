@@ -34,7 +34,7 @@ namespace Client.Unit
 
         void OnConnectServer(ClientUnit client);
 
-        void ReceiveCommand(player_input_command command);
+        void ReceiveCommand(PlayerInputCommand command);
         void LogicUpdate();
 
     }

@@ -35,11 +35,11 @@ public class UnitController : PhysicsBase, IClient
        
     }
 
-    public void ReceiveCommand(player_input_command command)
+    public void ReceiveCommand(PlayerInputCommand command)
     {
         if (command.id != ClientUnit.ID) return;
 
-        if (command.command_type == (int)command_type.Move)
+        if (command.command_type == (int)CommandType.Move)
         {
             Vector3 targetPosition = new Vector3(command.x, command.y, command.z);
             Vector3 direction = (targetPosition - this.currentLogicPosition).normalized;
