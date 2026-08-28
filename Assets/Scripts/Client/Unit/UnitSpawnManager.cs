@@ -25,6 +25,7 @@ namespace Client.Unit
         {
             GameClockManager.Instance.OnGameLogicUpdate += LogicUpdate;
             GameClockManager.Instance.OnReceiveCommand += ReceiveCommand;
+            GameClockManager.Instance.OnSpawnEntity += OnSpawnEntity;
 
             ClientManager.Instance.OnConnectServer += OnConnectServer;
         }
@@ -33,6 +34,7 @@ namespace Client.Unit
         {
             GameClockManager.Instance.OnGameLogicUpdate -= LogicUpdate;
             GameClockManager.Instance.OnReceiveCommand -= ReceiveCommand;
+            GameClockManager.Instance.OnSpawnEntity -= OnSpawnEntity;
 
             ClientManager.Instance.OnConnectServer -= OnConnectServer;
         }
@@ -45,6 +47,18 @@ namespace Client.Unit
             {
                 InstantiateUnit(_spawnPosQueue.Dequeue());
             }
+        }
+
+        public void OnSpawnEntity(int entityId, Vector3 position)
+        {
+            _spawnPosQueue.Enqueue(new ClientUnitWithVec()
+            {
+                ClientUnit = new ClientUnit()
+                {
+                    ID = entityId
+                },
+                Position = position
+            });
         }
 
         public void ReceiveCommand(PlayerInputCommand command, int entityId)

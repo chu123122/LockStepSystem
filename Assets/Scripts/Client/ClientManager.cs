@@ -8,6 +8,8 @@ using System.Runtime.InteropServices;
 using Client;
 using Client.Unit;
 using UnityEngine.Serialization;
+using LockStepCore.Level;
+using LockStepCore.Physics;
 
 public class ClientManager : MonoSingleton<ClientManager>
 {
@@ -27,6 +29,8 @@ public class ClientManager : MonoSingleton<ClientManager>
 
     private const float NoResponseTime = 2f;
     private float _lastNoResponseTime = 0f;
+
+    private List<EntitySpawn>? _pendingWorldInit;
 
     public override void Awake()
     {
@@ -160,7 +164,43 @@ public class ClientManager : MonoSingleton<ClientManager>
                 }
 
                 break;
+            case PacketType.InitWorld:
+            {
+                var spawns = new List<EntitySpawn>();
+                var offset = 4;
+                var count = BitConverter.ToInt32(bytes, offset);
+                offset += 4;
+                for (var i = 0; i < count; i++)
+                {
+                    var spawn = new EntitySpawn();
+                    spawn.EntityId = BitConverter.ToInt32(bytes, offset);
+                    offset += 4;
+                    spawn.Shape = (Shape)BitConverter.ToInt32(bytes, offset);
+                    offset += 4;
+                    spawn.X = BitConverter.ToSingle(bytes, offset);
+                    offset += 4;
+                    spawn.Y = BitConverter.ToSingle(bytes, offset);
+                    offset += 4;
+                    spawn.Z = BitConverter.ToSingle(bytes, offset);
+                    offset += 4;
+                    spawn.Size = BitConverter.ToSingle(bytes, offset);
+                    offset += 4;
+                    spawn.IsDynamic = BitConverter.ToInt32(bytes, offset) != 0;
+                    offset += 4;
+                    spawns.Add(spawn);
+                }
+                _pendingWorldInit = spawns;
+                Debug.LogWarning($"收到世界初始化数据:{count} 个实体");
+                break;
+            }
         }
+    }
+
+    public List<EntitySpawn>? ConsumeWorldInit()
+    {
+        var spawns = _pendingWorldInit;
+        _pendingWorldInit = null;
+        return spawns;
     }
 
     /// <summary>

@@ -1,5 +1,8 @@
 using System.Diagnostics;
+using System.IO;
 using System.Net;
+using System.Text.Json;
+using LockStepCore.Level;
 using LockStepServer.Protocol;
 
 namespace LockStepServer;
@@ -27,6 +30,7 @@ public static class ServerLoop
     private static NetworkManager _network = null!;
     private static ClientManager _clients = null!;
     private static FrameSyncManager _frames = null!;
+    private static LevelData _levelData = null!;
 
     private static readonly Dictionary<PacketType, Action<byte[], IPEndPoint>> Dispatch = new()
     {
@@ -39,6 +43,7 @@ public static class ServerLoop
         _network = new NetworkManager();
         _clients = new ClientManager();
         _frames = new FrameSyncManager();
+        LoadLevelData();
         if (!_network.Init(out string? err))
             throw new ArgumentException($"{err}");
 
@@ -134,6 +139,12 @@ public static class ServerLoop
             Utils.SerializedPacket(new PacketHeader { packet_type = (int)PacketType.Response }, response);
         _network.SendBufToClient(_currentServerFrame, responseBytes, responseBytes.Length, from);
 
+        if (_levelData.Spawns.Count > 0)
+        {
+            var initBytes = Utils.SerializedPacket(new PacketHeader { packet_type = (int)PacketType.InitWorld }, _levelData.Spawns);
+            _network.SendBufToClient(_currentServerFrame, initBytes, initBytes.Length, from);
+        }
+
         var createCommand = new PlayerInputCommand
         {
             id = response.id,
@@ -152,6 +163,25 @@ public static class ServerLoop
             var bytes = Utils.SerializedPacket(new PacketHeader { packet_type = (int)PacketType.CommandSet }, packet);
             _network.SendBufToClient(_currentServerFrame, bytes, bytes.Length, from);
         }
+    }
+
+    private static void LoadLevelData()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null)
+        {
+            var candidate = Path.Combine(dir.FullName, "Data", "levels", "world.json");
+            if (File.Exists(candidate))
+            {
+                var json = File.ReadAllText(candidate);
+                _levelData = JsonSerializer.Deserialize<LevelData>(json, new JsonSerializerOptions { IncludeFields = true }) ?? new LevelData();
+                Console.WriteLine($"关卡数据已加载:{_levelData.Spawns.Count} 个实体 ({candidate})");
+                return;
+            }
+            dir = dir.Parent;
+        }
+        _levelData = new LevelData();
+        Console.WriteLine("未找到关卡数据,以空世界启动");
     }
 
     private static void HandleCommand(byte[] data, IPEndPoint from)

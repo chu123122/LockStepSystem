@@ -93,6 +93,14 @@ public class DeterministicWorld : IComponentStore
         return id;
     }
 
+    public int CreateEntity(int explicitId)
+    {
+        _entities[_entityCount++] = explicitId;
+        if (explicitId >= _nextEntityId)
+            _nextEntityId = explicitId + 1;
+        return explicitId;
+    }
+
     public void DestroyEntity(int id)
     {
         foreach (var store in _componentStores.Values)

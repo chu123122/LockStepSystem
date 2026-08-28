@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using LockStepCore.Level;
 using LockStepServer.Protocol;
 
 namespace LockStepServer;
@@ -7,7 +9,7 @@ public static class Utils
 {
     public const int CommandSize = 20;
 
-    public const int MaxPacketSize = 4 + 4 + 4 + 10 * CommandSize;
+    public const int MaxPacketSize = 4 + 4 + 128 * 28;   // 覆盖最大消息:InitWorld(头4+count4+N×28)
 
     public static byte[] SerializedPacket(PacketHeader header, object body)
     {
@@ -28,15 +30,30 @@ public static class Utils
                 w.WriteFloat(c.x); w.WriteFloat(c.y); w.WriteFloat(c.z);
                 break;
 
-            case PacketType.CommandSet:             
+            case PacketType.CommandSet:
                 var f = (FramePacket)body;
                 w.WriteInt(f.frame_number);
                 w.WriteInt(f.command_count);
-                foreach (var cmd in f.commands)      
+                foreach (var cmd in f.commands)
                 {
                     w.WriteInt(cmd.id);
                     w.WriteInt(cmd.command_type);
                     w.WriteFloat(cmd.x); w.WriteFloat(cmd.y); w.WriteFloat(cmd.z);
+                }
+                break;
+
+            case PacketType.InitWorld:
+                var spawns = (List<EntitySpawn>)body;
+                w.WriteInt(spawns.Count);
+                foreach (var s in spawns)
+                {
+                    w.WriteInt(s.EntityId);
+                    w.WriteInt((int)s.Shape);
+                    w.WriteFloat(s.X);
+                    w.WriteFloat(s.Y);
+                    w.WriteFloat(s.Z);
+                    w.WriteFloat(s.Size);
+                    w.WriteInt(s.IsDynamic ? 1 : 0);
                 }
                 break;
 

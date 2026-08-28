@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using LockStepCore;
+using LockStepCore.Level;
+using LockStepCore.Physics;
 using CoreTransform = LockStepCore.Base.Transform;
 using CoreRigidbody = LockStepCore.Base.Rigidbody;
 using CoreCircleCollider = LockStepCore.Base.CircleCollider;
+using CoreBoxCollider = LockStepCore.Base.BoxCollider;
 using NumericsVector3 = System.Numerics.Vector3;
 
 namespace Client
@@ -37,9 +40,14 @@ namespace Client
 
         public event Action OnGameLogicUpdate;
         public event Action<PlayerInputCommand, int> OnReceiveCommand;
+        public event Action<int, Vector3> OnSpawnEntity;
 
         public void LogicUpdate()
         {
+            var pendingInit = _clientManager.ConsumeWorldInit();
+            if (pendingInit != null)
+                InitWorldEntities(pendingInit);
+
             accumulator += Time.deltaTime;
 
             while (accumulator >= TIME_STEP)
@@ -101,6 +109,28 @@ namespace Client
                 }
             }
             _world.SetFrameInputs(inputs);
+        }
+
+        private void InitWorldEntities(List<EntitySpawn> spawns)
+        {
+            foreach (var s in spawns)
+            {
+                _world.CreateEntity(s.EntityId);
+                _world.AddComponent(s.EntityId, new CoreTransform { EntityId = s.EntityId, Position = new NumericsVector3(s.X, s.Y, s.Z) });
+                switch (s.Shape)
+                {
+                    case Shape.Circle:
+                        _world.AddComponent(s.EntityId, new CoreCircleCollider { EntityId = s.EntityId, Radius = s.Size });
+                        break;
+                    case Shape.Box:
+                        _world.AddComponent(s.EntityId, new CoreBoxCollider { EntityId = s.EntityId, HalfExtents = new NumericsVector3(s.Size, s.Size, s.Size) });
+                        break;
+                }
+                if (s.IsDynamic)
+                    _world.AddComponent(s.EntityId, new CoreRigidbody { EntityId = s.EntityId, Velocity = NumericsVector3.Zero, InverseMass = 1f });
+
+                OnSpawnEntity?.Invoke(s.EntityId, new Vector3(s.X, s.Y, s.Z));
+            }
         }
 
         private int CreatePlayerEntity(PlayerInputCommand cmd)

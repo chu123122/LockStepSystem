@@ -8,6 +8,7 @@ public enum PacketType
     Response = 2,
     Command = 3,
     CommandSet = 4,
+    InitWorld = 5,
 }
 
 public enum CommandType
