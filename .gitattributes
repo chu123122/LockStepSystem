@@ -1,0 +1,17 @@
+* text=auto
+
+*.unity text eol=lf
+*.prefab text eol=lf
+*.asset text eol=lf
+*.mat text eol=lf
+*.meta text eol=lf
+*.cs text eol=lf
+*.shader text eol=lf
+*.cginc text eol=lf
+*.hlsl text eol=lf
+*.shadergraph text eol=lf
+*.json text eol=lf
+
+*.dll binary
+*.png binary
+*.ttf binary
