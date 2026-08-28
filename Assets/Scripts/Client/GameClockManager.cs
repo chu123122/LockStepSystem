@@ -2,47 +2,48 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Serialization;
+using LockStepCore;
+using CoreTransform = LockStepCore.Base.Transform;
+using CoreRigidbody = LockStepCore.Base.Rigidbody;
+using CoreCircleCollider = LockStepCore.Base.CircleCollider;
+using NumericsVector3 = System.Numerics.Vector3;
 
 namespace Client
 {
     public class GameClockManager : MonoSingleton<GameClockManager>
     {
         private const float LOGIC_FRAME_RATE = 30.0f;
-        public const float TIME_STEP = 1.0f / LOGIC_FRAME_RATE; // 每帧的固定时长，约0.033秒
-        private const int INPUT_DELAY = 5; //输入延迟
+        public const float TIME_STEP = 1.0f / LOGIC_FRAME_RATE;
+        private const int INPUT_DELAY = 5;
 
-        public int currentLogicFrame = 0; //实际跑的逻辑帧，只依靠服务端控制
-        public int currentInputFrame = 0; //进行输入采集的逻辑帧，依靠客户端进行一直运行
+        public int currentLogicFrame = 0;
+        public int currentInputFrame = 0;
         public int executeLogicFrame = 0;
         public float accumulator = 0.0f;
 
         private ClientManager _clientManager;
         private InputManager _inputManager;
-        private PhysicsManager _physicsManager;
+        private readonly DeterministicWorld _world = new();
 
         public int replayFrame = 0;
+
+        public DeterministicWorld World => _world;
 
         private void Start()
         {
             _clientManager = ClientManager.Instance;
             _inputManager = InputManager.Instance;
-            _physicsManager = PhysicsManager.Instance;
         }
 
         public event Action OnGameLogicUpdate;
-        public event Action<PlayerInputCommand> OnReceiveCommand;
+        public event Action<PlayerInputCommand, int> OnReceiveCommand;
 
-
-        
         public void LogicUpdate()
         {
             accumulator += Time.deltaTime;
 
             while (accumulator >= TIME_STEP)
             {
-                Debug.LogError($"当前输入帧：{currentInputFrame}，当前逻辑帧：{currentLogicFrame}");
-                //从输入管理器,收集输入创建指令
                 PlayerInputState playerInputState = _inputManager.GetPlayerInputCommand();
                 PlayerInputCommand command = _clientManager.CreateInputCommand(playerInputState);
                 if (_inputManager.GetPlayerInput())
@@ -51,56 +52,70 @@ namespace Client
                     _clientManager.AddLocalPlayerInputCommand(command, currentInputFrame);
                 }
 
-                //检查当前逻辑帧是否收集到了玩家输入指令
                 if (_clientManager.HaveInputCommandInFrame(currentInputFrame))
                 {
-                    _clientManager.SendInputCommandToServer(currentInputFrame); //发送指令往服务端
+                    _clientManager.SendInputCommandToServer(currentInputFrame);
                 }
 
-                _clientManager.ReceivePacketFromServer(); //接收从服务端传输过来的指令集
+                _clientManager.ReceivePacketFromServer();
 
-                //TODO 注意，这里进行了逻辑的简化，我们在开始时直接忽略了输入延迟的作用
-                executeLogicFrame = currentLogicFrame - INPUT_DELAY; //当前执行帧
+                executeLogicFrame = currentLogicFrame - INPUT_DELAY;
 
-                if (_clientManager.ServerCommandSetDic.Keys.Contains(executeLogicFrame)) //检查执行帧的指令集是否到达
+                if (_clientManager.ServerCommandSetDic.Keys.Contains(executeLogicFrame))
                 {
                     PlayerInputCommand[] commands = _clientManager.ServerCommandSetDic[executeLogicFrame];
-                    SendCommandSetToClient(commands); //执行指令
-
+                    ExecuteFrameCommands(commands);
                     currentLogicFrame += 1;
-                    _physicsManager.LogicUpdate();
+                    _world.Update(TIME_STEP);
                     OnGameLogicUpdate?.Invoke();
                 }
                 else if (executeLogicFrame < 0)
                 {
                     currentLogicFrame += 1;
                 }
-                else
-                {
-                    //游戏暂停等待
-                }
-
 
                 accumulator -= TIME_STEP;
                 currentInputFrame += 1;
             }
         }
 
-        public bool IsReplayTime()
+        private void ExecuteFrameCommands(PlayerInputCommand[] commands)
         {
-            if(currentLogicFrame<=replayFrame)
-                return true;
-            return false;
+            var inputs = new List<PlayerFrameInput>();
+            foreach (var cmd in commands)
+            {
+                if (cmd.id == -1)
+                    continue;
+                if (cmd.command_type == (int)CommandType.Create)
+                {
+                    var entityId = CreatePlayerEntity(cmd);
+                    OnReceiveCommand?.Invoke(cmd, entityId);
+                }
+                else if (cmd.command_type == (int)CommandType.Move)
+                {
+                    inputs.Add(new PlayerFrameInput
+                    {
+                        PlayerId = cmd.id,
+                        MoveTarget = new NumericsVector3(cmd.x, cmd.y, cmd.z),
+                    });
+                }
+            }
+            _world.SetFrameInputs(inputs);
         }
 
-
-        private void SendCommandSetToClient(PlayerInputCommand[] inputCommands)
+        private int CreatePlayerEntity(PlayerInputCommand cmd)
         {
-            foreach (var inputCommand in inputCommands)
-            {
-                if (inputCommand.id != -1)
-                    OnReceiveCommand?.Invoke(inputCommand);
-            }
+            var entityId = _world.CreateEntity();
+            _world.AddComponent(entityId, new CoreTransform { EntityId = entityId, Position = new NumericsVector3(cmd.x, cmd.y, cmd.z) });
+            _world.AddComponent(entityId, new CoreRigidbody { EntityId = entityId, Velocity = NumericsVector3.Zero, InverseMass = 1f });
+            _world.AddComponent(entityId, new CoreCircleCollider { EntityId = entityId, Radius = 0.5f });
+            _world.BindPlayerEntity(cmd.id, entityId);
+            return entityId;
+        }
+
+        public bool IsReplayTime()
+        {
+            return currentLogicFrame <= replayFrame;
         }
     }
 }

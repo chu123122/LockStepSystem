@@ -1,41 +1,18 @@
-using System;
-
 namespace Client.Unit
 {
-    
-    public enum UnitState
-    {
-        Idle = 0,
-        Move = 1,
-    }
-
-    public struct ClientUnit : IEquatable<ClientUnit>
+    public struct ClientUnit
     {
         public int ID;
-
-        public bool Equals(ClientUnit other)
-        {
-            return ID == other.ID;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is ClientUnit other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            return ID;
-        }
     }
+
     public interface IClient
     {
-        ClientUnit ClientUnit{get;set;}
+        ClientUnit ClientUnit { get; set; }
 
         void OnConnectServer(ClientUnit client);
 
-        void ReceiveCommand(PlayerInputCommand command);
-        void LogicUpdate();
+        void ReceiveCommand(PlayerInputCommand command, int entityId);
 
+        void LogicUpdate();
     }
 }

@@ -82,17 +82,6 @@ public class ClientManager : MonoSingleton<ClientManager>
         return false;
     }
 
-    public bool HaveReceiveFrame(int currentFrame, int inputDelay)
-    {
-        foreach (var frame in _logicCommandsDic.Keys)
-        {
-            if (frame >= inputDelay) //获取到的指令集时间已经超过输入延迟
-                return true;
-        }
-
-        return false;
-    }
-
 
     /// <summary>
     /// 接收输入状态，将其转化为输入指令

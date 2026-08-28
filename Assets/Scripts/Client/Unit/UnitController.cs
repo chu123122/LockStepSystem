@@ -1,8 +1,7 @@
-
 using Client;
 using Client.Unit;
 using UnityEngine;
-
+using CoreTransform = LockStepCore.Base.Transform;
 
 public class UnitController : PhysicsBase, IClient
 {
@@ -12,6 +11,15 @@ public class UnitController : PhysicsBase, IClient
         euler.x = 0;
         euler.z = 0;
         transform.rotation = Quaternion.Euler(euler);
+
+        if (ClientUnit.ID >= 0)
+        {
+            var world = GameClockManager.Instance.World;
+            if (world.TryGetComponent<CoreTransform>(ClientUnit.ID, out var t))
+            {
+                currentLogicPosition = new Vector3(t.Position.X, t.Position.Y, t.Position.Z);
+            }
+        }
 
         this.RenderUpdate();
     }
@@ -32,22 +40,11 @@ public class UnitController : PhysicsBase, IClient
 
     public void LogicUpdate()
     {
-       
     }
 
-    public void ReceiveCommand(PlayerInputCommand command)
+    public void ReceiveCommand(PlayerInputCommand command, int entityId)
     {
-        if (command.id != ClientUnit.ID) return;
-
-        if (command.command_type == (int)CommandType.Move)
-        {
-            Vector3 targetPosition = new Vector3(command.x, command.y, command.z);
-            Vector3 direction = (targetPosition - this.currentLogicPosition).normalized;
-            float strikeForce = 20.0f; // 固定的“力道”
-            this.currentVelocity = direction * strikeForce;
-        }
     }
-
 
     public void OnConnectServer(ClientUnit client)
     {

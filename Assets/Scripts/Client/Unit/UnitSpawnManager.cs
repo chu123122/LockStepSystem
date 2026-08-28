@@ -44,11 +44,10 @@ namespace Client.Unit
             if (_spawnPosQueue.Count > 0)
             {
                 InstantiateUnit(_spawnPosQueue.Dequeue());
-                PhysicsManager.Instance.RefreshPhysicsObjects();
             }
         }
 
-        public void ReceiveCommand(PlayerInputCommand command)
+        public void ReceiveCommand(PlayerInputCommand command, int entityId)
         {
             if (command.command_type == (int)CommandType.Create)
             {
@@ -56,13 +55,12 @@ namespace Client.Unit
                 {
                     ClientUnit = new ClientUnit()
                     {
-                        ID = command.id
+                        ID = entityId
                     },
                     Position = new Vector3(command.x, command.y, command.z)
                 });
             }
         }
-
 
         public void OnConnectServer(ClientUnit client)
         {
