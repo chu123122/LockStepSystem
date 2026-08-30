@@ -100,9 +100,9 @@ public static class ServerLoop
 
                     if (frameData.Status == FrameStatus.Ready)
                     {
-                        FramePacket packet = Utils.BuildCommandSetPacket( _currentServerFrame, frameData.PlayerInputCommands);
+                        FrameInputPacket inputPacket = Utils.BuildCommandSetPacket( _currentServerFrame, frameData.PlayerInputCommands);
                         Byte[] bytes = Utils.SerializedPacket(
-                            new PacketHeader { type = (int)PacketType.CommandSet }, packet);
+                            new PacketHeader { type = (int)PacketType.FrameInput }, inputPacket);
                         foreach (IPEndPoint addr in _clients.GetAllClientAddresses())
                             _network.SendBufToClient(_currentServerFrame, bytes, bytes.Length, addr);
 
@@ -160,8 +160,8 @@ public static class ServerLoop
         for (int i = 0; i < _currentServerFrame; i++)
         {
             FrameData historyFrame = _frames.GetFrameData(i);
-            FramePacket packet = Utils.BuildCommandSetPacket( _currentServerFrame,historyFrame.PlayerInputCommands);
-            Byte[] bytes = Utils.SerializedPacket(new PacketHeader { type = (int)PacketType.CommandSet }, packet);
+            FrameInputPacket inputPacket = Utils.BuildCommandSetPacket( _currentServerFrame,historyFrame.PlayerInputCommands);
+            Byte[] bytes = Utils.SerializedPacket(new PacketHeader { type = (int)PacketType.FrameInput }, inputPacket);
             _network.SendBufToClient(_currentServerFrame, bytes, bytes.Length, from);
         }
     }

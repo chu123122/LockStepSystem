@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using LockStepCore.Base;
+using LockStepCore.Hash;
+using LockStepCore.Level;
 using LockStepCore.Physics;
 
 namespace LockStepCore;
@@ -13,14 +15,9 @@ public interface IComponentStore
     void SetComponent<T>(int id, T component) where T : struct, IComponent;
 }
 
-public struct PlayerFrameInput
-{
-    public int PlayerId;
-    public Vector3 MoveTarget;
-}
-
 public class DeterministicWorld : IComponentStore
 {
+    private readonly IFrameHasher _hasher = new Fnv1A64Hasher();
     private const int MaxEntities = 1024;
     private readonly Dictionary<Type, Dictionary<int, IComponent>> _componentStores = new();
     private readonly List<int> _dynamicIds = new();
@@ -48,6 +45,35 @@ public class DeterministicWorld : IComponentStore
         _physicsSystem = new PhysicsSystem(this, settings);
     }
 
+    public void InitWorld(LevelData data)
+    {
+        foreach (EntitySpawn s in data.Spawns)
+        {
+            CreateEntity(s.EntityId);
+            AddComponent(s.EntityId, new Transform { EntityId = s.EntityId, Position = new Vector3(s.X, s.Y, s.Z) });
+            switch (s.Shape)
+            {
+                case Shape.Circle:
+                    AddComponent(s.EntityId, new CircleCollider { EntityId = s.EntityId, Radius = s.SizeX });
+                    break;
+                case Shape.Box:
+                    AddComponent(s.EntityId, new BoxCollider { EntityId = s.EntityId, HalfExtents = new Vector3(s.SizeX, s.SizeY, s.SizeZ) });
+                    break;
+            }
+            if (s.IsDynamic)
+                AddComponent(s.EntityId, new Rigidbody { EntityId = s.EntityId, Velocity = Vector3.Zero, InverseMass = 1f });
+        }
+    }
+
+    public int CreatePlayerEntity(int playerId, Vector3 position, float radius)
+    {
+        int entityId = CreateEntity();
+        AddComponent(entityId, new Transform { EntityId = entityId, Position = position });
+        AddComponent(entityId, new Rigidbody { EntityId = entityId, Velocity = Vector3.Zero, InverseMass = 1f });
+        AddComponent(entityId, new CircleCollider { EntityId = entityId, Radius = radius });
+        BindPlayerEntity(playerId, entityId);
+        return entityId;
+    }
     public void Update(float dt)
     {
         ApplyInputs();
@@ -177,5 +203,33 @@ public class DeterministicWorld : IComponentStore
     private bool HasComponent<T>(int id) where T : IComponent
     {
         return _componentStores.TryGetValue(typeof(T), out var store) && store.ContainsKey(id);
+    }
+
+    /// <summary>
+    /// 依据所有Entity的位置和速度进行世界Hash的计算
+    /// </summary>
+    /// <returns></returns>
+    public ulong ComputeFrameHash()
+    {
+        int[] ordered = new int[_entityCount];
+        Array.Copy(_entities, ordered, _entityCount);
+        Array.Sort(ordered);
+
+        List<(Vector3 Position, Vector3 Velocity)> states = new List<(Vector3 Position, Vector3 Velocity)>(ordered.Length);
+        for (int i = 0; i < ordered.Length; i++)
+        {
+            int id = ordered[i];
+
+            if (!TryGetComponent<Transform>(id, out Transform t))
+                continue;
+
+            Vector3 velocity = Vector3.Zero;
+            if (TryGetComponent<Rigidbody>(id, out Rigidbody rb))
+                velocity = rb.Velocity;
+
+            states.Add((t.Position, velocity));
+        }
+
+        return _hasher.Compute(states);
     }
 }

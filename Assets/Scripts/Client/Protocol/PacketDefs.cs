@@ -9,6 +9,8 @@ namespace Client.Protocol
         Command = 3,
         CommandSet = 4,
         InitWorld = 5,
+        HashError=6,
+        FrameHash=7
     }
 
     public enum CommandType
@@ -47,5 +49,12 @@ namespace Client.Protocol
         public int id; // 客户端id
         public int command_type;
         public float x, y, z; // 移动位置
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct FrameHashPacket
+    {
+        public int frame_number;
+        public ulong hash;
     }
 }

@@ -7,8 +7,10 @@ public enum PacketType
     Join = 1,
     Response = 2,
     Command = 3,
-    CommandSet = 4,
+    FrameInput = 4,
     InitWorld = 5,
+    HashError=6,
+    FrameHash=7
 }
 
 public enum CommandType
@@ -24,7 +26,7 @@ public struct PacketHeader
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct FramePacket
+public struct FrameInputPacket
 {
     public PacketType packet_type;
 
@@ -32,6 +34,12 @@ public struct FramePacket
     public int command_count;
 
     public PlayerInputCommand[] commands;
+}
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct FrameHashPacket
+{
+    public int frame_number;
+    public ulong hash;
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]

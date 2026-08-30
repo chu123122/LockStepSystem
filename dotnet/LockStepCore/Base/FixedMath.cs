@@ -1,4 +1,4 @@
-namespace LockStepCore;
+namespace LockStepCore.Base;
 
 public class FixedMath
 {

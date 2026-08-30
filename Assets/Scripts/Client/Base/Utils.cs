@@ -39,6 +39,15 @@ namespace Client.Base
             throw new ArgumentException($"反序列化:未知包类型 {header.type}");
         }
 
+     
+
+        private static readonly Dictionary<PacketType, Func<Reader, object?>> Deserializer = new()
+        {
+            [PacketType.Response] = r => new JoinPacket { id = r.ReadInt(), frame_number = r.ReadInt() },
+            [PacketType.CommandSet] = r => ReadFramePacket(r),
+            [PacketType.InitWorld] = r => ReadInitWorld(r),
+        };
+
         private static FramePacket ReadFramePacket(Reader r)
         {
             FramePacket fp = new FramePacket { frame_number = r.ReadInt(), command_count = r.ReadInt() };
@@ -58,14 +67,6 @@ namespace Client.Base
             fp.commands = cmds;
             return fp;
         }
-
-        private static readonly Dictionary<PacketType, Func<Reader, object?>> Deserializer = new()
-        {
-            [PacketType.Response] = r => new JoinPacket { id = r.ReadInt(), frame_number = r.ReadInt() },
-            [PacketType.CommandSet] = r => ReadFramePacket(r),
-            [PacketType.InitWorld] = r => ReadInitWorld(r),
-        };
-
         private static List<EntitySpawn> ReadInitWorld(Reader r)
         {
             int count = r.ReadInt();

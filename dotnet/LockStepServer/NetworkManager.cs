@@ -52,7 +52,7 @@ public class NetworkManager
         {
             return -1;
         }
-        // UDP 语义:对端已不存在(关闭/换端口)时,Windows 在下一次收包上报 10054 ConnectionReset——对 UDP 是可忽略事件,不是致命错误
+        
         catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
         {
             return -1;

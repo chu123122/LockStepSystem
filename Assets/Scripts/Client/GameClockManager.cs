@@ -114,34 +114,16 @@ namespace Client
 
         private void InitWorldEntities(List<EntitySpawn> spawns)
         {
+            _world.InitWorld(new LevelData { Spawns = spawns });
             foreach (EntitySpawn s in spawns)
             {
-                _world.CreateEntity(s.EntityId);
-                _world.AddComponent(s.EntityId, new CoreTransform { EntityId = s.EntityId, Position = new NumericsVector3(s.X, s.Y, s.Z) });
-                switch (s.Shape)
-                {
-                    case Shape.Circle:
-                        _world.AddComponent(s.EntityId, new CoreCircleCollider { EntityId = s.EntityId, Radius = s.SizeX });
-                        break;
-                    case Shape.Box:
-                        _world.AddComponent(s.EntityId, new CoreBoxCollider { EntityId = s.EntityId, HalfExtents = new NumericsVector3(s.SizeX, s.SizeY, s.SizeZ) });
-                        break;
-                }
-                if (s.IsDynamic)
-                    _world.AddComponent(s.EntityId, new CoreRigidbody { EntityId = s.EntityId, Velocity = NumericsVector3.Zero, InverseMass = 1f });
-
                 OnSpawnEntity?.Invoke(s.EntityId, new Vector3(s.X, s.Y, s.Z));
             }
         }
 
         private int CreatePlayerEntity(PlayerInputCommand cmd)
         {
-            int entityId = _world.CreateEntity();
-            _world.AddComponent(entityId, new CoreTransform { EntityId = entityId, Position = new NumericsVector3(cmd.x, cmd.y, cmd.z) });
-            _world.AddComponent(entityId, new CoreRigidbody { EntityId = entityId, Velocity = NumericsVector3.Zero, InverseMass = 1f });
-            _world.AddComponent(entityId, new CoreCircleCollider { EntityId = entityId, Radius = 0.5f });
-            _world.BindPlayerEntity(cmd.id, entityId);
-            return entityId;
+            return _world.CreatePlayerEntity(cmd.id, new NumericsVector3(cmd.x, cmd.y, cmd.z), 0.5f);
         }
 
         public bool IsReplayTime()

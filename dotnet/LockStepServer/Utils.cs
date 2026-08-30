@@ -38,8 +38,8 @@ public static class Utils
                 w.WriteFloat(c.z);
                 break;
 
-            case PacketType.CommandSet:
-                FramePacket f = (FramePacket)body;
+            case PacketType.FrameInput:
+                FrameInputPacket f = (FrameInputPacket)body;
                 w.WriteInt(f.frame_number);
                 w.WriteInt(f.command_count);
                 foreach (PlayerInputCommand cmd in f.commands)
@@ -96,23 +96,52 @@ public static class Utils
     /// <summary>
     /// 构造下发的指令集包
     /// </summary>
-    public static FramePacket BuildCommandSetPacket(int frame, List<PlayerInputCommand> commands)
+    public static FrameInputPacket BuildCommandSetPacket(int frame, List<PlayerInputCommand> commands)
     {
-        return new FramePacket()
+        return new FrameInputPacket()
         {
-            packet_type = PacketType.CommandSet,
+            packet_type = PacketType.FrameInput,
             frame_number = frame,
             command_count = commands.Count,
             commands = commands.ToArray(),
         };
     }
 
+
+    private static readonly Dictionary<PacketType, Func<Reader, object?>> Deserializer = new()
+    {
+        [PacketType.Response] = r => new JoinPacket { id = r.ReadInt(), frame_number = r.ReadInt() },
+        [PacketType.Command] = r => ReadInputCommand(r),
+        [PacketType.FrameInput] = r => ReadFrameInput(r),
+        [PacketType.FrameHash] = r => ReadFrameHash(r),
+    };
+
+    private static PlayerInputCommand ReadInputCommand(Reader r)
+    {
+        return new PlayerInputCommand
+        {
+            id = r.ReadInt(),
+            command_type = r.ReadInt(),
+            x = r.ReadFloat(), y = r.ReadFloat(), z = r.ReadFloat(),
+        };
+    }
+
+    private static FrameHashPacket ReadFrameHash(Reader r)
+    {
+        return new FrameHashPacket
+        {
+            frame_number = r.ReadInt(),
+            hash = r.ReadULong()
+        };
+        ;
+    }
+
     /// <summary>
     /// 解析指令集
     /// </summary>
-    private static FramePacket ReadFramePacket(Reader r)
+    private static FrameInputPacket ReadFrameInput(Reader r)
     {
-        FramePacket fp = new FramePacket { frame_number = r.ReadInt(), command_count = r.ReadInt() };
+        FrameInputPacket fp = new FrameInputPacket { frame_number = r.ReadInt(), command_count = r.ReadInt() };
         PlayerInputCommand[] cmds = new PlayerInputCommand[fp.command_count];
         for (int i = 0; i < cmds.Length; i++)
         {
@@ -127,15 +156,4 @@ public static class Utils
         fp.commands = cmds;
         return fp;
     }
-
-    private static readonly Dictionary<PacketType, Func<Reader, object?>> Deserializer = new()
-    {
-        [PacketType.Response] = r => new JoinPacket { id = r.ReadInt(), frame_number = r.ReadInt() },
-        [PacketType.Command] = r => new PlayerInputCommand
-        {
-            id = r.ReadInt(), command_type = r.ReadInt(),
-            x = r.ReadFloat(), y = r.ReadFloat(), z = r.ReadFloat(),
-        },
-        [PacketType.CommandSet] = r => ReadFramePacket(r),
-    };
 }
