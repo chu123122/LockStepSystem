@@ -41,7 +41,7 @@ namespace Client
 
         public event Action OnGameLogicUpdate;
         public event Action<PlayerInputCommand, int> OnReceiveCommand;
-        public event Action<int, Vector3> OnSpawnEntity;
+        public event Action<EntitySpawn> OnSpawnEntity;
 
         public void LogicUpdate()
         {
@@ -117,7 +117,7 @@ namespace Client
             _world.InitWorld(new LevelData { Spawns = spawns });
             foreach (EntitySpawn s in spawns)
             {
-                OnSpawnEntity?.Invoke(s.EntityId, new Vector3(s.X, s.Y, s.Z));
+                OnSpawnEntity?.Invoke(s);
             }
         }
 

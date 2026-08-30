@@ -7,6 +7,7 @@ using LockStepCore.Level;
 using LockStepCore.Physics;
 
 namespace LockStepCore;
+
 public interface IComponentStore
 {
     IReadOnlyList<int> DynamicEntities { get; }
@@ -57,12 +58,22 @@ public class DeterministicWorld : IComponentStore
                     AddComponent(s.EntityId, new CircleCollider { EntityId = s.EntityId, Radius = s.SizeX });
                     break;
                 case Shape.Box:
-                    AddComponent(s.EntityId, new BoxCollider { EntityId = s.EntityId, HalfExtents = new Vector3(s.SizeX, s.SizeY, s.SizeZ) });
+                    AddComponent(s.EntityId,
+                        new BoxCollider
+                            { EntityId = s.EntityId, HalfExtents = new Vector3(s.SizeX, s.SizeY, s.SizeZ) });
                     break;
             }
+
             if (s.IsDynamic)
-                AddComponent(s.EntityId, new Rigidbody { EntityId = s.EntityId, Velocity = Vector3.Zero, InverseMass = 1f });
+                AddComponent(s.EntityId,
+                    new Rigidbody { EntityId = s.EntityId, Velocity = Vector3.Zero, InverseMass = 1f });
         }
+    }
+
+    public void Update(float dt)
+    {
+        ApplyInputs();
+        _physicsSystem.Update(dt);
     }
 
     public int CreatePlayerEntity(int playerId, Vector3 position, float radius)
@@ -73,11 +84,6 @@ public class DeterministicWorld : IComponentStore
         AddComponent(entityId, new CircleCollider { EntityId = entityId, Radius = radius });
         BindPlayerEntity(playerId, entityId);
         return entityId;
-    }
-    public void Update(float dt)
-    {
-        ApplyInputs();
-        _physicsSystem.Update(dt);
     }
 
     public void BindPlayerEntity(int playerId, int entityId)
@@ -109,6 +115,7 @@ public class DeterministicWorld : IComponentStore
                 SetComponent(entityId, body);
             }
         }
+
         _pendingInputs.Clear();
     }
 
@@ -144,7 +151,7 @@ public class DeterministicWorld : IComponentStore
             }
         }
     }
-    
+
     public T AddComponent<T>(int entityId, T component) where T : IComponent
     {
         if (!_componentStores.TryGetValue(typeof(T), out var store))
@@ -152,6 +159,7 @@ public class DeterministicWorld : IComponentStore
             store = new Dictionary<int, IComponent>();
             _componentStores[typeof(T)] = store;
         }
+
         store[entityId] = component;
         RefreshClassification(entityId);
         return component;
@@ -182,6 +190,7 @@ public class DeterministicWorld : IComponentStore
             store = new Dictionary<int, IComponent>();
             _componentStores[typeof(T)] = store;
         }
+
         store[id] = component;
     }
 
@@ -215,7 +224,8 @@ public class DeterministicWorld : IComponentStore
         Array.Copy(_entities, ordered, _entityCount);
         Array.Sort(ordered);
 
-        List<(Vector3 Position, Vector3 Velocity)> states = new List<(Vector3 Position, Vector3 Velocity)>(ordered.Length);
+        List<(Vector3 Position, Vector3 Velocity)> states =
+            new List<(Vector3 Position, Vector3 Velocity)>(ordered.Length);
         for (int i = 0; i < ordered.Length; i++)
         {
             int id = ordered[i];

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Client.Protocol;
 using UnityEngine;
+using LockStepCore.Level;
+using LockStepCore.Physics;
 
 namespace Client.Unit
 {
@@ -50,13 +52,20 @@ namespace Client.Unit
             }
         }
 
-        public void OnSpawnEntity(int entityId, Vector3 position)
+        public void OnSpawnEntity(EntitySpawn spawn)
         {
-            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            go.transform.position = position;
+            GameObject go = spawn.Shape switch
+            {
+                Shape.Box => GameObject.CreatePrimitive(PrimitiveType.Cube),
+                _ => GameObject.CreatePrimitive(PrimitiveType.Sphere),
+            };
+
+            go.transform.position = new Vector3(spawn.X, spawn.Y, spawn.Z);
+            go.transform.localScale = new Vector3(spawn.SizeX * 2, spawn.SizeY * 2, spawn.SizeZ * 2);
+
             UnitController view = go.AddComponent<UnitController>();
-            view.ClientUnit = new ClientUnit { ID = entityId };
-            Debug.Log($"生成世界球壳 entityId:{entityId} pos:{position}");
+            view.ClientUnit = new ClientUnit { ID = spawn.EntityId };
+            Debug.Log($"生成世界壳 entityId:{spawn.EntityId} shape:{spawn.Shape} pos:{go.transform.position}");
         }
 
         public void ReceiveCommand(PlayerInputCommand command, int entityId)

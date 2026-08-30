@@ -2,17 +2,19 @@ using LockStepServer.Protocol;
 
 namespace LockStepServer;
 
-
+/// <summary>
+/// 持有帧输入数据
+/// </summary>
 public class FrameSyncManager
 {
-    private static readonly Dictionary<int, FrameData> frameDataMap = new();
+    private static readonly Dictionary<int, FrameData> FrameDataMap = new();
 
     public FrameData GetFrameData(int frame)
     {
-        if (!frameDataMap.TryGetValue(frame, out FrameData frameData))
+        if (!FrameDataMap.TryGetValue(frame, out FrameData frameData))
         {
             frameData = new FrameData();     
-            frameDataMap.Add(frame, frameData);
+            FrameDataMap.Add(frame, frameData);
         }
         return frameData;
     }

@@ -25,12 +25,12 @@ public class NetworkManager
         }
     }
 
-    public void SendBufToClient(int serverFrame, byte[] buf, int bufLen, IPEndPoint clientAddr)
+    public void SendBufToClient( byte[] buf, int bufLen, IPEndPoint clientAddr)
     {
         _serverSocket.SendTo(buf, bufLen, SocketFlags.None, clientAddr);
     }
 
-    public void SendBufToAllClient(int serverFrame, byte[] buf, int bufLen, List<IPEndPoint> clientAddrs)
+    public void SendBufToAllClient( byte[] buf, int bufLen, List<IPEndPoint> clientAddrs)
     {
         foreach (IPEndPoint clientAddr in clientAddrs)
         {
