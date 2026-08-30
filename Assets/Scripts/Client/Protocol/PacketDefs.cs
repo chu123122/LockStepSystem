@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Client
+namespace Client.Protocol
 {
     public enum PacketType
     {

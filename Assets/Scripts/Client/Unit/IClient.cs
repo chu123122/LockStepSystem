@@ -1,3 +1,5 @@
+using Client.Protocol;
+
 namespace Client.Unit
 {
     public struct ClientUnit

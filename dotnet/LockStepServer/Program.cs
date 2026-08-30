@@ -20,7 +20,7 @@ public static class ServerLoop
     private const float ServerTickRate = 30.0f;
     private const float TimeStep = 1.0f / ServerTickRate;
     private static readonly TimeSpan TimeoutDuration = TimeSpan.FromMilliseconds(200);
-    private const int RecvBufSize = Utils.MaxPacketSize;   // 缓冲与协议最大包同源,不再拍数字
+    private const int RecvBufSize = Utils.MaxPacketSize; // 缓冲与协议最大包同源,不再拍数字
 
     private static int _currentServerFrame = 0;
 
@@ -61,7 +61,7 @@ public static class ServerLoop
                 while (true)
                 {
                     byte[] buf = new byte[RecvBufSize];
-                    int bytesReceived = _network.ReceiveFromClient(buf, RecvBufSize, out var from);
+                    int bytesReceived = _network.ReceiveFromClient(buf, RecvBufSize, out IPEndPoint? from);
                     if (bytesReceived <= 0)
                         break;
                     // 防御:单包超过缓冲(协议最大包 < 缓冲,正常不应触发)
@@ -75,7 +75,7 @@ public static class ServerLoop
                     Array.Copy(buf, data, bytesReceived);
 
                     PacketType type = (PacketType)BitConverter.ToInt32(data, 0);
-                    if (Dispatch.TryGetValue(type, out var handler))
+                    if (Dispatch.TryGetValue(type, out Action<byte[], IPEndPoint> handler))
                         handler(data, from!);
                     else
                         Console.WriteLine($"未知包类型:{(int)type}");
@@ -85,7 +85,7 @@ public static class ServerLoop
                 int clientCount = _clients.GetClientCount();
                 if (clientCount > 0)
                 {
-                    var frameData = _frames.GetFrameData(_currentServerFrame);
+                    FrameData frameData = _frames.GetFrameData(_currentServerFrame);
 
                     if (frameData.Status == FrameStatus.Collecting)
                     {
@@ -100,10 +100,10 @@ public static class ServerLoop
 
                     if (frameData.Status == FrameStatus.Ready)
                     {
-                        var packet = BuildCommandSetPacket(_currentServerFrame, frameData.PlayerInputCommands);
-                        var bytes = Utils.SerializedPacket(
-                            new PacketHeader { packet_type = (int)PacketType.CommandSet }, packet);
-                        foreach (var addr in _clients.GetAllClientAddresses())
+                        FramePacket packet = Utils.BuildCommandSetPacket( _currentServerFrame, frameData.PlayerInputCommands);
+                        Byte[] bytes = Utils.SerializedPacket(
+                            new PacketHeader { type = (int)PacketType.CommandSet }, packet);
+                        foreach (IPEndPoint addr in _clients.GetAllClientAddresses())
                             _network.SendBufToClient(_currentServerFrame, bytes, bytes.Length, addr);
 
                         frameData.Status = FrameStatus.Dispatched;
@@ -128,24 +128,25 @@ public static class ServerLoop
     {
         Console.WriteLine("接收客户端请求链接:成功");
 
-        var response = new JoinPacket
+        JoinPacket response = new JoinPacket
         {
             id = _clients.GetClientId(),
             frame_number = _currentServerFrame,
         };
         _clients.AddClientWithCheck(from);
 
-        var responseBytes =
-            Utils.SerializedPacket(new PacketHeader { packet_type = (int)PacketType.Response }, response);
+        Byte[] responseBytes =
+            Utils.SerializedPacket(new PacketHeader { type = (int)PacketType.Response }, response);
         _network.SendBufToClient(_currentServerFrame, responseBytes, responseBytes.Length, from);
 
         if (_levelData.Spawns.Count > 0)
         {
-            var initBytes = Utils.SerializedPacket(new PacketHeader { packet_type = (int)PacketType.InitWorld }, _levelData.Spawns);
+            Byte[] initBytes =
+                Utils.SerializedPacket(new PacketHeader { type = (int)PacketType.InitWorld }, _levelData.Spawns);
             _network.SendBufToClient(_currentServerFrame, initBytes, initBytes.Length, from);
         }
 
-        var createCommand = new PlayerInputCommand
+        PlayerInputCommand createCommand = new PlayerInputCommand
         {
             id = response.id,
             command_type = (int)CommandType.Create,
@@ -158,28 +159,32 @@ public static class ServerLoop
         // 下发历史帧指令集
         for (int i = 0; i < _currentServerFrame; i++)
         {
-            var historyFrame = _frames.GetFrameData(i);
-            var packet = BuildCommandSetPacket(i, historyFrame.PlayerInputCommands);
-            var bytes = Utils.SerializedPacket(new PacketHeader { packet_type = (int)PacketType.CommandSet }, packet);
+            FrameData historyFrame = _frames.GetFrameData(i);
+            FramePacket packet = Utils.BuildCommandSetPacket( _currentServerFrame,historyFrame.PlayerInputCommands);
+            Byte[] bytes = Utils.SerializedPacket(new PacketHeader { type = (int)PacketType.CommandSet }, packet);
             _network.SendBufToClient(_currentServerFrame, bytes, bytes.Length, from);
         }
     }
 
     private static void LoadLevelData()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        DirectoryInfo dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null)
         {
-            var candidate = Path.Combine(dir.FullName, "Data", "levels", "world.json");
+            string candidate = Path.Combine(dir.FullName, "Data", "levels", "world.json");
             if (File.Exists(candidate))
             {
-                var json = File.ReadAllText(candidate);
-                _levelData = JsonSerializer.Deserialize<LevelData>(json, new JsonSerializerOptions { IncludeFields = true }) ?? new LevelData();
+                string json = File.ReadAllText(candidate);
+                _levelData =
+                    JsonSerializer.Deserialize<LevelData>(json, new JsonSerializerOptions { IncludeFields = true }) ??
+                    new LevelData();
                 Console.WriteLine($"关卡数据已加载:{_levelData.Spawns.Count} 个实体 ({candidate})");
                 return;
             }
+
             dir = dir.Parent;
         }
+
         _levelData = new LevelData();
         Console.WriteLine("未找到关卡数据,以空世界启动");
     }
@@ -192,21 +197,6 @@ public static class ServerLoop
         _frames.AddCommandInMap(body, _currentServerFrame);
         Console.WriteLine($"接收客户端指令 当前服务端逻辑帧:{_currentServerFrame} 已连接客户端数量:{_clients.GetClientCount()}");
     }
-
-    private static FramePacket BuildCommandSetPacket(int frame, List<PlayerInputCommand> commands)
-    {
-        var slots = new PlayerInputCommand[10];
-        for (int i = 0; i < slots.Length; i++)
-            slots[i] = new PlayerInputCommand { id = -1 };
-
-        for (int i = 0; i < commands.Count && i < slots.Length; i++)
-            slots[i] = commands[i];
-
-        return new FramePacket
-        {
-            frame_number = frame,
-            command_count = commands.Count,
-            commands = slots,
-        };
-    }
+    
+  
 }

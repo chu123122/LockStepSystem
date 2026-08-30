@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Client.Protocol;
 using UnityEngine;
 using LockStepCore;
 using LockStepCore.Level;
@@ -44,7 +45,7 @@ namespace Client
 
         public void LogicUpdate()
         {
-            var pendingInit = _clientManager.ConsumeWorldInit();
+            List<EntitySpawn>? pendingInit = _clientManager.ConsumeWorldInit();
             if (pendingInit != null)
                 InitWorldEntities(pendingInit);
 
@@ -89,14 +90,14 @@ namespace Client
 
         private void ExecuteFrameCommands(PlayerInputCommand[] commands)
         {
-            var inputs = new List<PlayerFrameInput>();
-            foreach (var cmd in commands)
+            List<PlayerFrameInput> inputs = new List<PlayerFrameInput>();
+            foreach (PlayerInputCommand cmd in commands)
             {
                 if (cmd.id == -1)
                     continue;
                 if (cmd.command_type == (int)CommandType.Create)
                 {
-                    var entityId = CreatePlayerEntity(cmd);
+                    int entityId = CreatePlayerEntity(cmd);
                     OnReceiveCommand?.Invoke(cmd, entityId);
                 }
                 else if (cmd.command_type == (int)CommandType.Move)
@@ -113,17 +114,17 @@ namespace Client
 
         private void InitWorldEntities(List<EntitySpawn> spawns)
         {
-            foreach (var s in spawns)
+            foreach (EntitySpawn s in spawns)
             {
                 _world.CreateEntity(s.EntityId);
                 _world.AddComponent(s.EntityId, new CoreTransform { EntityId = s.EntityId, Position = new NumericsVector3(s.X, s.Y, s.Z) });
                 switch (s.Shape)
                 {
                     case Shape.Circle:
-                        _world.AddComponent(s.EntityId, new CoreCircleCollider { EntityId = s.EntityId, Radius = s.Size });
+                        _world.AddComponent(s.EntityId, new CoreCircleCollider { EntityId = s.EntityId, Radius = s.SizeX });
                         break;
                     case Shape.Box:
-                        _world.AddComponent(s.EntityId, new CoreBoxCollider { EntityId = s.EntityId, HalfExtents = new NumericsVector3(s.Size, s.Size, s.Size) });
+                        _world.AddComponent(s.EntityId, new CoreBoxCollider { EntityId = s.EntityId, HalfExtents = new NumericsVector3(s.SizeX, s.SizeY, s.SizeZ) });
                         break;
                 }
                 if (s.IsDynamic)
@@ -135,7 +136,7 @@ namespace Client
 
         private int CreatePlayerEntity(PlayerInputCommand cmd)
         {
-            var entityId = _world.CreateEntity();
+            int entityId = _world.CreateEntity();
             _world.AddComponent(entityId, new CoreTransform { EntityId = entityId, Position = new NumericsVector3(cmd.x, cmd.y, cmd.z) });
             _world.AddComponent(entityId, new CoreRigidbody { EntityId = entityId, Velocity = NumericsVector3.Zero, InverseMass = 1f });
             _world.AddComponent(entityId, new CoreCircleCollider { EntityId = entityId, Radius = 0.5f });

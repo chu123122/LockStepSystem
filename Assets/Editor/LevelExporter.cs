@@ -25,11 +25,33 @@ namespace Client.Level
                     auth = balls[i].gameObject.AddComponent<WorldEntityAuthoring>();
                 auth.entityId = i;
                 auth.shape = Shape.Circle;
-                auth.size = 0.5f;
+                auth.sizeX = 0.5f;
+                auth.sizeY = 0.5f;
+                auth.sizeZ = 0.5f;
                 auth.isDynamic = true;
             }
 
             Debug.Log($"已为 {balls.Length} 个球挂上 WorldEntityAuthoring");
+
+            var walls = GameObject.FindGameObjectsWithTag("Wall")
+                .OrderBy(w => w.name)
+                .ToArray();
+
+            for (var i = 0; i < walls.Length; i++)
+            {
+                var auth = walls[i].GetComponent<WorldEntityAuthoring>();
+                if (auth == null)
+                    auth = walls[i].AddComponent<WorldEntityAuthoring>();
+                auth.entityId = balls.Length + i;
+                auth.shape = Shape.Box;
+                var bounds = walls[i].GetComponent<Renderer>().bounds;
+                auth.sizeX = bounds.size.x / 2f;
+                auth.sizeY = bounds.size.y / 2f;
+                auth.sizeZ = bounds.size.z / 2f;
+                auth.isDynamic = false;
+            }
+
+            Debug.Log($"已为 {walls.Length} 面墙挂上 WorldEntityAuthoring");
             Export();
         }
 
@@ -48,7 +70,9 @@ namespace Client.Level
                     X = pos.x,
                     Y = pos.y,
                     Z = pos.z,
-                    Size = auth.size,
+                    SizeX = auth.sizeX,
+                    SizeY = auth.sizeY,
+                    SizeZ = auth.sizeZ,
                     IsDynamic = auth.isDynamic,
                 });
             }

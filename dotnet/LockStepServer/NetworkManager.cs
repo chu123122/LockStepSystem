@@ -32,7 +32,7 @@ public class NetworkManager
 
     public void SendBufToAllClient(int serverFrame, byte[] buf, int bufLen, List<IPEndPoint> clientAddrs)
     {
-        foreach (var clientAddr in clientAddrs)
+        foreach (IPEndPoint clientAddr in clientAddrs)
         {
             _serverSocket.SendTo(buf, bufLen, SocketFlags.None, clientAddr);
         }

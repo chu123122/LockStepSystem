@@ -15,7 +15,7 @@ namespace Client
                     _instance = FindObjectOfType<T>();
                     if (_instance == null)
                     {
-                        var obj = new GameObject(typeof(T).Name);
+                        GameObject obj = new GameObject(typeof(T).Name);
                         _instance = obj.AddComponent<T>();
                         DontDestroyOnLoad(obj);
                     }

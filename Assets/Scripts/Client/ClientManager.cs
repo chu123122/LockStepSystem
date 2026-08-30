@@ -6,6 +6,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using Client;
+using Client.Base;
+using Client.Protocol;
 using Client.Unit;
 using UnityEngine.Serialization;
 using LockStepCore.Level;
@@ -70,7 +72,7 @@ public class ClientManager : MonoSingleton<ClientManager>
     /// </summary>
     public void SendInputCommandToServer(int currentFrame)
     {
-        if (!_logicCommandsDic.TryGetValue(currentFrame, out var command))
+        if (!_logicCommandsDic.TryGetValue(currentFrame, out PlayerInputCommand command))
         {
             Debug.LogError("当前逻辑帧中不存在玩家输入指令");
             return;
@@ -121,15 +123,12 @@ public class ClientManager : MonoSingleton<ClientManager>
         }
 
         byte[] bytes = _client.Receive(ref _anyIP);
-        //截取头部作为特征码
-        PacketHeader packetHeader = Common.BytesToStruct<PacketHeader>(bytes);
-        PacketType packetType = (PacketType)packetHeader.packet_type;
+        (PacketHeader header, object? body) = Utils.DeserializedPacket(bytes);
 
-        switch (packetType)
+        switch ((PacketType)header.type)
         {
             case PacketType.Response:
-                //头部之后才是 body(跳过 4 字节头)
-                JoinPacket joinPacket = Common.BytesToStruct<JoinPacket>(bytes, 4);
+                JoinPacket joinPacket = (JoinPacket)body!;
                 _isConnect = true;
                 _id = joinPacket.id;
                 _gameClockManager.currentInputFrame = joinPacket.frame_number; //同步输入逻辑帧
@@ -146,51 +145,29 @@ public class ClientManager : MonoSingleton<ClientManager>
                                  $"客户端输入帧(同步后)：{_gameClockManager.currentInputFrame}");
                 break;
             case PacketType.CommandSet:
-                FramePacket framePacket = Common.BytesToStruct<FramePacket>(bytes, 4);
-                int currentFrame = framePacket.frame_number;
-                PlayerInputCommand[] inputCommands = framePacket.commands;
-                int commandCount = framePacket.command_count; //TODO:不确定要如何处理
-                ServerCommandSetDic.Add(currentFrame, inputCommands);
+            {
+                FramePacket framePacket = (FramePacket)body!;
+                ServerCommandSetDic.Add(framePacket.frame_number, framePacket.commands);
 
-                foreach (var command in inputCommands)
+                foreach (PlayerInputCommand command in framePacket.commands)
                 {
                     if (command.id != -1)
                     {
                         Debug.LogWarning($"从服务端接收非空指令集成功 " +
-                                      $"非空指令类型{(CommandType)command.command_type}"+
+                                      $"非空指令类型{(CommandType)command.command_type}" +
                                       $"指令集执行逻辑帧：{framePacket.frame_number}" +
                                       $"客户端逻辑帧：{_gameClockManager.currentLogicFrame}" +
-                                      $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} ");}
+                                      $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} ");
+                    }
                 }
 
                 break;
+            }
             case PacketType.InitWorld:
             {
-                var spawns = new List<EntitySpawn>();
-                var offset = 4;
-                var count = BitConverter.ToInt32(bytes, offset);
-                offset += 4;
-                for (var i = 0; i < count; i++)
-                {
-                    var spawn = new EntitySpawn();
-                    spawn.EntityId = BitConverter.ToInt32(bytes, offset);
-                    offset += 4;
-                    spawn.Shape = (Shape)BitConverter.ToInt32(bytes, offset);
-                    offset += 4;
-                    spawn.X = BitConverter.ToSingle(bytes, offset);
-                    offset += 4;
-                    spawn.Y = BitConverter.ToSingle(bytes, offset);
-                    offset += 4;
-                    spawn.Z = BitConverter.ToSingle(bytes, offset);
-                    offset += 4;
-                    spawn.Size = BitConverter.ToSingle(bytes, offset);
-                    offset += 4;
-                    spawn.IsDynamic = BitConverter.ToInt32(bytes, offset) != 0;
-                    offset += 4;
-                    spawns.Add(spawn);
-                }
+                List<EntitySpawn> spawns = (List<EntitySpawn>)body!;
                 _pendingWorldInit = spawns;
-                Debug.LogWarning($"收到世界初始化数据:{count} 个实体");
+                Debug.LogWarning($"收到世界初始化数据:{spawns.Count} 个实体");
                 break;
             }
         }
@@ -198,7 +175,7 @@ public class ClientManager : MonoSingleton<ClientManager>
 
     public List<EntitySpawn>? ConsumeWorldInit()
     {
-        var spawns = _pendingWorldInit;
+        List<EntitySpawn>? spawns = _pendingWorldInit;
         _pendingWorldInit = null;
         return spawns;
     }
@@ -208,7 +185,7 @@ public class ClientManager : MonoSingleton<ClientManager>
     /// </summary>
     private void SendJoinRequest()
     {
-        SendPacketToServer(new PacketHeader { packet_type = (int)PacketType.Join }, PacketType.Join);
+        SendPacketToServer(new PacketHeader { type = (int)PacketType.Join }, PacketType.Join);
     }
 
     private void SendPacketToServer(object packet, PacketType type)
@@ -217,15 +194,15 @@ public class ClientManager : MonoSingleton<ClientManager>
         int sendValue = 0;
         switch (type)
         {
-            //发送请求连接(服务器只读头部,body 为空)
+            //发送请求连接
             case PacketType.Join:
-                myData = Common.StructToBytes((PacketHeader)packet);
+                myData = Utils.StructToBytes((PacketHeader)packet);
                 break;
-            //发送当前指令:头部(4B)+ 指令 body
+            //发送当前指令
             case PacketType.Command:
                 myData = Combine(
-                    Common.StructToBytes(new PacketHeader { packet_type = (int)PacketType.Command }),
-                    Common.StructToBytes((PlayerInputCommand)packet));
+                    Utils.StructToBytes(new PacketHeader { type = (int)PacketType.Command }),
+                    Utils.StructToBytes((PlayerInputCommand)packet));
                 break;
             default:
                 Debug.LogError("未知错误，无法判定发送往服务器包类型");

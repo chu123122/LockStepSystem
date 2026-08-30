@@ -20,16 +20,17 @@ public enum CommandType
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct PacketHeader
 {
-    public int packet_type;
+    public int type;
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct FramePacket
 {
+    public PacketType packet_type;
+
     public int frame_number;
     public int command_count;
 
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 10)]
     public PlayerInputCommand[] commands;
 }
 

@@ -7,7 +7,9 @@ namespace Client.Level
     {
         public int entityId;
         public Shape shape = Shape.Circle;
-        public float size = 0.5f;
+        public float sizeX = 0.5f;
+        public float sizeY = 0.5f;
+        public float sizeZ = 0.5f;
         public bool isDynamic = true;
     }
 }

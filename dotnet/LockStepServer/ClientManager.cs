@@ -19,8 +19,8 @@ public class ClientManager
 
     public void AddClientWithCheck(IPEndPoint from)
     {
-        var upcoming = new ClientInfo { Id = GetClientId(), Address = from };
-        foreach (var client in _clients)
+        ClientInfo upcoming = new ClientInfo { Id = GetClientId(), Address = from };
+        foreach (ClientInfo client in _clients)
         {
             if (client.Id == upcoming.Id)
             {

@@ -9,7 +9,7 @@ public class FrameSyncManager
 
     public FrameData GetFrameData(int frame)
     {
-        if (!frameDataMap.TryGetValue(frame, out var frameData))
+        if (!frameDataMap.TryGetValue(frame, out FrameData frameData))
         {
             frameData = new FrameData();     
             frameDataMap.Add(frame, frameData);
@@ -25,8 +25,8 @@ public class FrameSyncManager
 
     public void FullNullCommandInFrameData(FrameData frameData, int clientCount)
     {
-        var emptyCount = clientCount - frameData.PlayerInputCommands.Count;
-        for (var i = 0; i < emptyCount; i++)
+        int emptyCount = clientCount - frameData.PlayerInputCommands.Count;
+        for (int i = 0; i < emptyCount; i++)
         {
             frameData.PlayerInputCommands.Add(new PlayerInputCommand { id = -1 });
         }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Client.Protocol;
 using UnityEngine;
 
 namespace Client.Unit
@@ -43,7 +44,7 @@ namespace Client.Unit
 
         public void LogicUpdate()
         {
-            if (_spawnPosQueue.Count > 0)
+            while (_spawnPosQueue.Count > 0)
             {
                 InstantiateUnit(_spawnPosQueue.Dequeue());
             }
@@ -51,14 +52,11 @@ namespace Client.Unit
 
         public void OnSpawnEntity(int entityId, Vector3 position)
         {
-            _spawnPosQueue.Enqueue(new ClientUnitWithVec()
-            {
-                ClientUnit = new ClientUnit()
-                {
-                    ID = entityId
-                },
-                Position = position
-            });
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            go.transform.position = position;
+            UnitController view = go.AddComponent<UnitController>();
+            view.ClientUnit = new ClientUnit { ID = entityId };
+            Debug.Log($"生成世界球壳 entityId:{entityId} pos:{position}");
         }
 
         public void ReceiveCommand(PlayerInputCommand command, int entityId)

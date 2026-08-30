@@ -17,7 +17,7 @@ public class FrameData
 
     //超时时间
     public TimeSpan Age => DateTime.UtcNow - CreationTime;
-
+    
     public FrameData()
     {
         Status = FrameStatus.Collecting;

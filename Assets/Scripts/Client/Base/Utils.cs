@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Client.Protocol;
+using LockStepCore.Level;
+using LockStepCore.Physics;
 
-namespace Client
+namespace Client.Base
 {
-    public class Common
+    public static class Utils
     {
-        //序列化为byte[]
         public static byte[] StructToBytes(object obj)
         {
             int size = Marshal.SizeOf(obj);
@@ -20,21 +23,70 @@ namespace Client
             {
                 Marshal.FreeHGlobal(ptr);
             }
+
             return arr;
         }
-
-        //反序列化byte[]为 T,offset 用于跳过包头(协议 = [PacketHeader][body])
-        public static T BytesToStruct<T>(byte[] bytes, int offset = 0) where T : struct
+        
+        public static (PacketHeader Header, object? Body) DeserializedPacket(byte[] data)
         {
-            GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
-            try
+            Reader r = new Reader(data);
+            PacketHeader header = new PacketHeader { type = r.ReadInt() };
+            if (Deserializer.TryGetValue((PacketType)header.type, out Func<Reader, object?>? deserialize))
             {
-                return (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject() + offset, typeof(T));
+                return (header, deserialize(r));
             }
-            finally
+
+            throw new ArgumentException($"反序列化:未知包类型 {header.type}");
+        }
+
+        private static FramePacket ReadFramePacket(Reader r)
+        {
+            FramePacket fp = new FramePacket { frame_number = r.ReadInt(), command_count = r.ReadInt() };
+            PlayerInputCommand[] cmds = new PlayerInputCommand[fp.command_count];
+            for (int i = 0; i < cmds.Length; i++)
             {
-                handle.Free();
+                cmds[i] = new PlayerInputCommand
+                {
+                    id = r.ReadInt(),
+                    command_type = r.ReadInt(),
+                    x = r.ReadFloat(),
+                    y = r.ReadFloat(),
+                    z = r.ReadFloat(),
+                };
             }
+
+            fp.commands = cmds;
+            return fp;
+        }
+
+        private static readonly Dictionary<PacketType, Func<Reader, object?>> Deserializer = new()
+        {
+            [PacketType.Response] = r => new JoinPacket { id = r.ReadInt(), frame_number = r.ReadInt() },
+            [PacketType.CommandSet] = r => ReadFramePacket(r),
+            [PacketType.InitWorld] = r => ReadInitWorld(r),
+        };
+
+        private static List<EntitySpawn> ReadInitWorld(Reader r)
+        {
+            int count = r.ReadInt();
+            List<EntitySpawn> spawns = new List<EntitySpawn>(count);
+            for (int i = 0; i < count; i++)
+            {
+                spawns.Add(new EntitySpawn
+                {
+                    EntityId = r.ReadInt(),
+                    Shape = (Shape)r.ReadInt(),
+                    X = r.ReadFloat(),
+                    Y = r.ReadFloat(),
+                    Z = r.ReadFloat(),
+                    SizeX = r.ReadFloat(),
+                    SizeY = r.ReadFloat(),
+                    SizeZ = r.ReadFloat(),
+                    IsDynamic = r.ReadInt() != 0,
+                });
+            }
+
+            return spawns;
         }
     }
 }

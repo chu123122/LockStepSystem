@@ -1,4 +1,5 @@
 using Client;
+using Client.Protocol;
 using Client.Unit;
 using UnityEngine;
 using CoreTransform = LockStepCore.Base.Transform;
@@ -14,8 +15,8 @@ public class UnitController : PhysicsBase, IClient
 
         if (ClientUnit.ID >= 0)
         {
-            var world = GameClockManager.Instance.World;
-            if (world.TryGetComponent<CoreTransform>(ClientUnit.ID, out var t))
+            LockStepCore.DeterministicWorld world = GameClockManager.Instance.World;
+            if (world.TryGetComponent<CoreTransform>(ClientUnit.ID, out CoreTransform t))
             {
                 currentLogicPosition = new Vector3(t.Position.X, t.Position.Y, t.Position.Z);
             }
