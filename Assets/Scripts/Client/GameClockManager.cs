@@ -18,11 +18,9 @@ namespace Client
     {
         private const float LOGIC_FRAME_RATE = 30.0f;
         public const float TIME_STEP = 1.0f / LOGIC_FRAME_RATE;
-        private const int INPUT_DELAY = 5;
 
         public int currentLogicFrame = 0;
         public int currentInputFrame = 0;
-        public int executeLogicFrame = 0;
         public float accumulator = 0.0f;
 
         private ClientManager _clientManager;
@@ -30,6 +28,9 @@ namespace Client
         private readonly DeterministicWorld _world = new();
 
         public int replayFrame = 0;
+
+        private int _lastHashFrame = 0;
+        private ulong _lastFrameHash = 0;
 
         public DeterministicWorld World => _world;
 
@@ -63,12 +64,12 @@ namespace Client
 
                 if (_clientManager.HaveInputCommandInFrame(currentInputFrame))
                 {
-                    _clientManager.SendInputCommandToServer(currentInputFrame);
+                    _clientManager.SendInputCommandToServer(currentInputFrame, _lastHashFrame, _lastFrameHash);
                 }
 
                 _clientManager.ReceivePacketFromServer();
 
-                executeLogicFrame = currentLogicFrame - INPUT_DELAY;
+                int executeLogicFrame = currentLogicFrame;   // 直接对应服务器帧号
 
                 if (_clientManager.ServerCommandSetDic.Keys.Contains(executeLogicFrame))
                 {
@@ -76,12 +77,11 @@ namespace Client
                     ExecuteFrameCommands(commands);
                     currentLogicFrame += 1;
                     _world.Update(TIME_STEP);
+                    _lastHashFrame = executeLogicFrame;     // 刚执行完的服务器帧号,对齐权威 hash
+                    _lastFrameHash = _world.ComputeFrameHash();
                     OnGameLogicUpdate?.Invoke();
                 }
-                else if (executeLogicFrame < 0)
-                {
-                    currentLogicFrame += 1;
-                }
+                // 缺帧时等待:缓冲由服务器延迟广播的 InputDelay 窗口保障
 
                 accumulator -= TIME_STEP;
                 currentInputFrame += 1;

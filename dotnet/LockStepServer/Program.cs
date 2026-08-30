@@ -23,8 +23,10 @@ public static class ServerLoop
     private const float TimeStep = 1.0f / ServerTickRate;
     private static readonly TimeSpan TimeoutDuration = TimeSpan.FromMilliseconds(200);
     private const int RecvBufSize = Utils.MaxPacketSize;
+    private const int InputDelay = 5;   // 延迟广播窗口:帧 I 在 I+InputDelay 时才广播
 
     private static int _currentServerFrame = 0;
+    private static readonly HashSet<int> _broadcastedFrames = new();   // 已广播帧,防重复
 
     private static long _lastTime;
     private static float _accumulator = 0f;
@@ -75,11 +77,21 @@ public static class ServerLoop
                     FrameData frameData = _frameSyncManager.GetFrameData(_currentServerFrame);
                     if (TryCollectFrameInput(clientCount, frameData))
                     {
-                        UpdateWorld(frameData);//更新世界
-                        BroadcastFrame(frameData);//广播客户端
-                        
-                        frameData.Status = FrameStatus.Dispatched;//下一帧
+                        UpdateWorld(frameData);              // 更新世界(暂不广播)
+                        frameData.Status = FrameStatus.Dispatched;
                         _currentServerFrame++;
+                    }
+                }
+
+                // 延迟广播窗口:帧 broadcastFrame 此刻才发给客户端
+                int broadcastFrame = _currentServerFrame - InputDelay;
+                if (broadcastFrame >= 0 && !_broadcastedFrames.Contains(broadcastFrame))
+                {
+                    FrameData bfd = _frameSyncManager.GetFrameData(broadcastFrame);
+                    if (bfd.Status == FrameStatus.Dispatched)
+                    {
+                        BroadcastFrame(broadcastFrame, bfd);
+                        _broadcastedFrames.Add(broadcastFrame);
                     }
                 }
 
@@ -159,10 +171,10 @@ public static class ServerLoop
         _authorityHashes[_currentServerFrame] = _world.ComputeFrameHash();
     }
 
-    private static void BroadcastFrame(FrameData frameData)
+    private static void BroadcastFrame(int frame, FrameData frameData)
     {
         FrameInputPacket inputPacket =
-            Utils.BuildCommandSetPacket(_currentServerFrame, frameData.PlayerInputCommands);
+            Utils.BuildCommandSetPacket(frame, frameData.PlayerInputCommands);
         Byte[] bytes = Utils.SerializedPacket(
             new PacketHeader { type = (int)PacketType.FrameInput }, inputPacket);
         foreach (IPEndPoint addr in _clientManager.GetAllClientAddresses())
@@ -207,7 +219,7 @@ public static class ServerLoop
         {
             FrameData historyFrame = _frameSyncManager.GetFrameData(i);
             FrameInputPacket inputPacket =
-                Utils.BuildCommandSetPacket(_currentServerFrame, historyFrame.PlayerInputCommands);
+                Utils.BuildCommandSetPacket(i, historyFrame.PlayerInputCommands);
             Byte[] bytes = Utils.SerializedPacket(new PacketHeader { type = (int)PacketType.FrameInput }, inputPacket);
             _networkManager.SendBufToClient(bytes, bytes.Length, from);
         }
@@ -238,10 +250,21 @@ public static class ServerLoop
 
     private static void HandleCommand(byte[] data, IPEndPoint from)
     {
-        if (Utils.DeserializedPacket(data).Body is not PlayerInputCommand body)
+        if (Utils.DeserializedPacket(data).Body is not InputPacket input)
             return;
 
-        _frameSyncManager.AddCommandInMap(body, _currentServerFrame);
+        if (_authorityHashes.TryGetValue(input.frame_number, out ulong authorityHash) && authorityHash != input.hash)
+        {
+            Console.WriteLine($"帧哈希不一致:帧 {input.frame_number} 客户端 {input.hash} 权威 {authorityHash}");
+
+            Byte[] errBytes = Utils.SerializedPacket(
+                new PacketHeader { type = (int)PacketType.HashError },
+                new HashErrorPacket { frame_number = input.frame_number });
+            _networkManager.SendBufToClient(errBytes, errBytes.Length, from);
+            return;
+        }
+
+        _frameSyncManager.AddCommandInMap(input.command, _currentServerFrame);
         Console.WriteLine($"接收客户端指令 当前服务端逻辑帧:{_currentServerFrame} 已连接客户端数量:{_clientManager.GetClientCount()}");
     }
 }
