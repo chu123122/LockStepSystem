@@ -19,6 +19,7 @@ internal static class Program
 
 public static class ServerLoop
 {
+    public const int ProtocolVersion = 1;
     private const float ServerTickRate = 30.0f;
     private const float TimeStep = 1.0f / ServerTickRate;
     private static readonly TimeSpan TimeoutDuration = TimeSpan.FromMilliseconds(200);
@@ -189,6 +190,7 @@ public static class ServerLoop
         {
             id = _clientManager.GetClientId(),
             frame_number = _currentServerFrame,
+            version = ProtocolVersion,
         };
         _clientManager.AddClientWithCheck(from);
 

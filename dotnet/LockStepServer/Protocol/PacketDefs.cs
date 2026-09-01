@@ -52,4 +52,5 @@ public struct JoinPacket
 {
     public int id;
     public int frame_number;
+    public int version;
 }

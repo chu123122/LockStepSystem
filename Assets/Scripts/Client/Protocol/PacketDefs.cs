@@ -52,6 +52,7 @@ namespace Client.Protocol
     {
         public int id;
         public int frame_number;
+        public int version;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

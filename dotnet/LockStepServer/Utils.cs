@@ -27,6 +27,7 @@ public static class Utils
                 JoinPacket j = (JoinPacket)body;
                 w.WriteInt(j.id);
                 w.WriteInt(j.frame_number);
+                w.WriteInt(j.version);
                 break;
 
             case PacketTypeS2C.FrameS2C:
@@ -89,6 +90,11 @@ public static class Utils
         throw new ArgumentException($"反序列化:未知包类型 {header.type}");
     }
 
+    private static readonly Dictionary<PacketTypeC2S, Func<Reader, object?>> Deserializer = new()
+    {
+        [PacketTypeC2S.FrameC2S] = r => ReadFramePacketC2S(r),
+    };
+
     /// <summary>
     /// 构造下发的指令集包
     /// </summary>
@@ -103,10 +109,6 @@ public static class Utils
         };
     }
 
-    private static readonly Dictionary<PacketTypeC2S, Func<Reader, object?>> Deserializer = new()
-    {
-        [PacketTypeC2S.FrameC2S] = r => ReadFramePacketC2S(r),
-    };
 
     private static FramePacketC2S ReadFramePacketC2S(Reader r)
     {

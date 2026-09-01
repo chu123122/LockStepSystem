@@ -41,7 +41,7 @@ namespace Client.Base
 
         private static readonly Dictionary<PacketTypeS2C, Func<Reader, object?>> Deserializer = new()
         {
-            [PacketTypeS2C.Response] = r => new JoinPacket { id = r.ReadInt(), frame_number = r.ReadInt() },
+            [PacketTypeS2C.Response] = r => new JoinPacket { id = r.ReadInt(), frame_number = r.ReadInt(), version = r.ReadInt() },
             [PacketTypeS2C.FrameS2C] = r => ReadFramePacket(r),
             [PacketTypeS2C.InitWorld] = r => ReadInitWorld(r),
             [PacketTypeS2C.HashError] = r => new HashErrorPacket { frame_number = r.ReadInt() },

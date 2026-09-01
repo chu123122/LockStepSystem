@@ -15,6 +15,8 @@ using LockStepCore.Physics;
 
 public class ClientManager : MonoSingleton<ClientManager>
 {
+    private const int ProtocolVersion = 1;
+
     private readonly Dictionary<int, PlayerInputCommand> _logicCommandsDic =
         new Dictionary<int, PlayerInputCommand>();
 
@@ -134,7 +136,14 @@ public class ClientManager : MonoSingleton<ClientManager>
         switch ((PacketTypeS2C)header.type)
         {
             case PacketTypeS2C.Response:
+            {
                 JoinPacket joinPacket = (JoinPacket)body!;
+                if (joinPacket.version != ProtocolVersion)
+                {
+                    Debug.LogError($"协议版本不匹配:服务器 {joinPacket.version} 客户端 {ProtocolVersion}");
+                    return;
+                }
+
                 _isConnect = true;
                 _id = joinPacket.id;
                 _gameClockManager.currentInputFrame = joinPacket.frame_number; //同步输入逻辑帧
@@ -150,6 +159,7 @@ public class ClientManager : MonoSingleton<ClientManager>
                                  $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} " +
                                  $"客户端输入帧(同步后)：{_gameClockManager.currentInputFrame}");
                 break;
+            }
             case PacketTypeS2C.FrameS2C:
             {
                 FramePacketS2C framePacket = (FramePacketS2C)body!;
@@ -202,17 +212,17 @@ public class ClientManager : MonoSingleton<ClientManager>
 
     private void SendPacketToServer(object packet, PacketTypeC2S type)
     {
-        byte[] myData = Array.Empty<byte>();
+        byte[] data = Array.Empty<byte>();
         int sendValue = 0;
         switch (type)
         {
             //发送请求连接
             case PacketTypeC2S.Join:
-                myData = Utils.StructToBytes((PacketHeader)packet);
+                data = Utils.StructToBytes((PacketHeader)packet);
                 break;
             //发送当前指令(附带上一逻辑帧号+哈希)
             case PacketTypeC2S.FrameC2S:
-                myData = Combine(
+                data = Combine(
                     Utils.StructToBytes(new PacketHeader { type = (int)PacketTypeC2S.FrameC2S }),
                     Utils.StructToBytes((FramePacketC2S)packet));
                 break;
@@ -221,7 +231,7 @@ public class ClientManager : MonoSingleton<ClientManager>
                 return;
         }
 
-        sendValue = _client.Send(myData, myData.Length, _anyIP);
+        sendValue = _client.Send(data, data.Length, _anyIP);
         Debug.Log($"发送数据包往服务端成功 " +
                   $"数据包类型：{type}" +
                   $"发送返回值：{sendValue}" +
