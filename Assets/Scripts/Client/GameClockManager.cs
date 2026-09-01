@@ -29,7 +29,6 @@ namespace Client
 
         public int replayFrame = 0;
 
-        private int _lastHashFrame = 0;
         private ulong _lastFrameHash = 0;
 
         public DeterministicWorld World => _world;
@@ -64,24 +63,21 @@ namespace Client
 
                 if (_clientManager.HaveInputCommandInFrame(currentInputFrame))
                 {
-                    _clientManager.SendInputCommandToServer(currentInputFrame, _lastHashFrame, _lastFrameHash);
+                    _clientManager.SendInputCommandToServer(currentInputFrame, currentLogicFrame, _lastFrameHash);
                 }
 
                 _clientManager.ReceivePacketFromServer();
 
-                int executeLogicFrame = currentLogicFrame;   // 直接对应服务器帧号
 
-                if (_clientManager.ServerCommandSetDic.Keys.Contains(executeLogicFrame))
+                if (_clientManager.ServerCommandSetDic.Keys.Contains(currentLogicFrame))
                 {
-                    PlayerInputCommand[] commands = _clientManager.ServerCommandSetDic[executeLogicFrame];
+                    PlayerInputCommand[] commands = _clientManager.ServerCommandSetDic[currentLogicFrame];
                     ExecuteFrameCommands(commands);
                     currentLogicFrame += 1;
                     _world.Update(TIME_STEP);
-                    _lastHashFrame = executeLogicFrame;     // 刚执行完的服务器帧号,对齐权威 hash
                     _lastFrameHash = _world.ComputeFrameHash();
                     OnGameLogicUpdate?.Invoke();
                 }
-                // 缺帧时等待:缓冲由服务器延迟广播的 InputDelay 窗口保障
 
                 accumulator -= TIME_STEP;
                 currentInputFrame += 1;
