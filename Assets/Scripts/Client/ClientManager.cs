@@ -70,7 +70,7 @@ public class ClientManager : MonoSingleton<ClientManager>
     /// <summary>
     /// 发送当前帧的玩家输入指令
     /// </summary>
-    public void SendInputCommandToServer(int currentFrame)
+    public void SendInputCommandToServer(int currentFrame, int frameNumber, ulong hash)
     {
         if (!_logicCommandsDic.TryGetValue(currentFrame, out PlayerInputCommand command))
         {
@@ -78,7 +78,13 @@ public class ClientManager : MonoSingleton<ClientManager>
             return;
         }
 
-        SendPacketToServer(command, PacketType.Command);
+        FramePacketC2S input = new FramePacketC2S
+        {
+            command = command,
+            frame_number = frameNumber,
+            hash = hash,
+        };
+        SendPacketToServer(input, PacketTypeC2S.FrameC2S);
     }
 
     public bool HaveInputCommandInFrame(int currentFrame)
@@ -125,9 +131,9 @@ public class ClientManager : MonoSingleton<ClientManager>
         byte[] bytes = _client.Receive(ref _anyIP);
         (PacketHeader header, object? body) = Utils.DeserializedPacket(bytes);
 
-        switch ((PacketType)header.type)
+        switch ((PacketTypeS2C)header.type)
         {
-            case PacketType.Response:
+            case PacketTypeS2C.Response:
                 JoinPacket joinPacket = (JoinPacket)body!;
                 _isConnect = true;
                 _id = joinPacket.id;
@@ -144,9 +150,9 @@ public class ClientManager : MonoSingleton<ClientManager>
                                  $"当前时间：{DateTime.Now.ToString(CultureInfo.CurrentCulture)} " +
                                  $"客户端输入帧(同步后)：{_gameClockManager.currentInputFrame}");
                 break;
-            case PacketType.CommandSet:
+            case PacketTypeS2C.FrameS2C:
             {
-                FramePacket framePacket = (FramePacket)body!;
+                FramePacketS2C framePacket = (FramePacketS2C)body!;
                 ServerCommandSetDic.Add(framePacket.frame_number, framePacket.commands);
 
                 foreach (PlayerInputCommand command in framePacket.commands)
@@ -163,11 +169,17 @@ public class ClientManager : MonoSingleton<ClientManager>
 
                 break;
             }
-            case PacketType.InitWorld:
+            case PacketTypeS2C.InitWorld:
             {
                 List<EntitySpawn> spawns = (List<EntitySpawn>)body!;
                 _pendingWorldInit = spawns;
                 Debug.LogWarning($"收到世界初始化数据:{spawns.Count} 个实体");
+                break;
+            }
+            case PacketTypeS2C.HashError:
+            {
+                HashErrorPacket hashErr = (HashErrorPacket)body!;
+                Debug.LogError($"帧哈希不一致!帧号:{hashErr.frame_number}");
                 break;
             }
         }
@@ -185,24 +197,24 @@ public class ClientManager : MonoSingleton<ClientManager>
     /// </summary>
     private void SendJoinRequest()
     {
-        SendPacketToServer(new PacketHeader { type = (int)PacketType.Join }, PacketType.Join);
+        SendPacketToServer(new PacketHeader { type = (int)PacketTypeC2S.Join }, PacketTypeC2S.Join);
     }
 
-    private void SendPacketToServer(object packet, PacketType type)
+    private void SendPacketToServer(object packet, PacketTypeC2S type)
     {
         byte[] myData = Array.Empty<byte>();
         int sendValue = 0;
         switch (type)
         {
             //发送请求连接
-            case PacketType.Join:
+            case PacketTypeC2S.Join:
                 myData = Utils.StructToBytes((PacketHeader)packet);
                 break;
-            //发送当前指令
-            case PacketType.Command:
+            //发送当前指令(附带上一逻辑帧号+哈希)
+            case PacketTypeC2S.FrameC2S:
                 myData = Combine(
-                    Utils.StructToBytes(new PacketHeader { type = (int)PacketType.Command }),
-                    Utils.StructToBytes((PlayerInputCommand)packet));
+                    Utils.StructToBytes(new PacketHeader { type = (int)PacketTypeC2S.FrameC2S }),
+                    Utils.StructToBytes((FramePacketC2S)packet));
                 break;
             default:
                 Debug.LogError("未知错误，无法判定发送往服务器包类型");

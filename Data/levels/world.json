@@ -1,0 +1,257 @@
+{
+    "Spawns": [
+        {
+            "EntityId": 0,
+            "Shape": 1,
+            "X": 8.0,
+            "Y": 0.0,
+            "Z": 11.510000228881836,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 1,
+            "Shape": 1,
+            "X": 8.0,
+            "Y": 0.0,
+            "Z": 12.979999542236329,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 2,
+            "Shape": 1,
+            "X": 5.940000057220459,
+            "Y": 0.0,
+            "Z": 13.140000343322754,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 3,
+            "Shape": 1,
+            "X": 3.880000114440918,
+            "Y": 0.0,
+            "Z": 8.0,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 4,
+            "Shape": 1,
+            "X": 1.820000171661377,
+            "Y": 0.0,
+            "Z": 6.890000343322754,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 5,
+            "Shape": 1,
+            "X": 3.880000114440918,
+            "Y": 0.0,
+            "Z": 11.010000228881836,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 6,
+            "Shape": 1,
+            "X": 1.820000171661377,
+            "Y": 0.0,
+            "Z": 9.90000057220459,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 7,
+            "Shape": 1,
+            "X": 10.420000076293946,
+            "Y": 0.0,
+            "Z": 5.550000190734863,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 8,
+            "Shape": 1,
+            "X": 8.360000610351563,
+            "Y": 0.0,
+            "Z": 4.440000534057617,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 9,
+            "Shape": 1,
+            "X": 10.420000076293946,
+            "Y": 0.0,
+            "Z": 8.0,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 10,
+            "Shape": 1,
+            "X": 8.360000610351563,
+            "Y": 0.0,
+            "Z": 6.890000343322754,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 11,
+            "Shape": 1,
+            "X": 4.369999885559082,
+            "Y": 0.0,
+            "Z": 5.590000152587891,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 12,
+            "Shape": 1,
+            "X": 2.6599998474121095,
+            "Y": 0.0,
+            "Z": 2.0500001907348635,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 13,
+            "Shape": 1,
+            "X": 11.329999923706055,
+            "Y": 0.0,
+            "Z": 1.5500001907348633,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 14,
+            "Shape": 1,
+            "X": 2.5900001525878908,
+            "Y": 0.0,
+            "Z": 3.489999771118164,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 15,
+            "Shape": 1,
+            "X": 13.710000038146973,
+            "Y": 0.0,
+            "Z": 6.380000114440918,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 16,
+            "Shape": 1,
+            "X": 13.729999542236329,
+            "Y": 0.0,
+            "Z": 3.270000457763672,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 17,
+            "Shape": 1,
+            "X": 13.710000038146973,
+            "Y": 0.0,
+            "Z": 11.850000381469727,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 18,
+            "Shape": 1,
+            "X": 11.649999618530274,
+            "Y": 0.0,
+            "Z": 10.74000072479248,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 0.5,
+            "IsDynamic": true
+        },
+        {
+            "EntityId": 19,
+            "Shape": 2,
+            "X": 11.729999542236329,
+            "Y": -0.07999998331069946,
+            "Z": 15.0,
+            "SizeX": 13.807466506958008,
+            "SizeY": 0.5,
+            "SizeZ": 0.5000017285346985,
+            "IsDynamic": false
+        },
+        {
+            "EntityId": 20,
+            "Shape": 2,
+            "X": 11.729999542236329,
+            "Y": -0.07999998331069946,
+            "Z": 0.0,
+            "SizeX": 13.807466506958008,
+            "SizeY": 0.5,
+            "SizeZ": 0.5000017285346985,
+            "IsDynamic": false
+        },
+        {
+            "EntityId": 21,
+            "Shape": 2,
+            "X": 15.0,
+            "Y": -0.07999998331069946,
+            "Z": 5.909999847412109,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 12.579498291015625,
+            "IsDynamic": false
+        },
+        {
+            "EntityId": 22,
+            "Shape": 2,
+            "X": 0.0,
+            "Y": -0.07999998331069946,
+            "Z": 6.0,
+            "SizeX": 0.5,
+            "SizeY": 0.5,
+            "SizeZ": 10.729799270629883,
+            "IsDynamic": false
+        }
+    ]
+}

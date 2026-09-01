@@ -38,12 +38,12 @@ public static class ServerLoop
     private static DeterministicWorld _world = null!;
     private static LevelData _levelData = null!;
     //世界哈希校验
-    private static readonly Dictionary<int, ulong> _authorityHashes = new();
+    private static readonly Dictionary<int, ulong> AuthorityHashes = new();
 
-    private static readonly Dictionary<PacketType, Action<byte[], IPEndPoint>> Dispatch = new()
+    private static readonly Dictionary<PacketTypeC2S, Action<byte[], IPEndPoint>> Dispatch = new()
     {
-        [PacketType.Join] = HandleJoin,
-        [PacketType.Command] = HandleCommand,
+        [PacketTypeC2S.Join] = HandleJoin,
+        [PacketTypeC2S.FrameC2S] = HandleCommand,
     };
 
     public static void Start()
@@ -83,7 +83,7 @@ public static class ServerLoop
                     }
                 }
 
-                // 延迟广播窗口:帧 broadcastFrame 此刻才发给客户端
+                // 延迟广播窗口
                 int broadcastFrame = _currentServerFrame - InputDelay;
                 if (broadcastFrame >= 0 && !_broadcastedFrames.Contains(broadcastFrame))
                 {
@@ -125,7 +125,7 @@ public static class ServerLoop
             byte[] data = new byte[bytesReceived];
             Array.Copy(buf, data, bytesReceived);
 
-            PacketType type = (PacketType)BitConverter.ToInt32(data, 0);
+            PacketTypeC2S type = (PacketTypeC2S)BitConverter.ToInt32(data, 0);
             if (Dispatch.TryGetValue(type, out Action<byte[], IPEndPoint> handler))
                 handler(data, from!);
             else
@@ -168,15 +168,15 @@ public static class ServerLoop
 
         _world.SetFrameInputs(inputs);
         _world.Update(TimeStep);
-        _authorityHashes[_currentServerFrame] = _world.ComputeFrameHash();
+        AuthorityHashes[_currentServerFrame] = _world.ComputeFrameHash();
     }
 
     private static void BroadcastFrame(int frame, FrameData frameData)
     {
-        FrameInputPacket inputPacket =
+        FramePacketS2C packetS2C =
             Utils.BuildCommandSetPacket(frame, frameData.PlayerInputCommands);
         Byte[] bytes = Utils.SerializedPacket(
-            new PacketHeader { type = (int)PacketType.FrameInput }, inputPacket);
+            new PacketHeader { type = (int)PacketTypeS2C.FrameS2C }, packetS2C);
         foreach (IPEndPoint addr in _clientManager.GetAllClientAddresses())
             _networkManager.SendBufToClient(bytes, bytes.Length, addr);
     }
@@ -193,13 +193,13 @@ public static class ServerLoop
         _clientManager.AddClientWithCheck(from);
 
         Byte[] responseBytes =
-            Utils.SerializedPacket(new PacketHeader { type = (int)PacketType.Response }, response);
+            Utils.SerializedPacket(new PacketHeader { type = (int)PacketTypeS2C.Response }, response);
         _networkManager.SendBufToClient(responseBytes, responseBytes.Length, from);
 
         if (_levelData.Spawns.Count > 0)
         {
             Byte[] initBytes =
-                Utils.SerializedPacket(new PacketHeader { type = (int)PacketType.InitWorld }, _levelData.Spawns);
+                Utils.SerializedPacket(new PacketHeader { type = (int)PacketTypeS2C.InitWorld }, _levelData.Spawns);
             _networkManager.SendBufToClient(initBytes, initBytes.Length, from);
         }
 
@@ -218,9 +218,9 @@ public static class ServerLoop
         for (int i = 0; i < _currentServerFrame; i++)
         {
             FrameData historyFrame = _frameSyncManager.GetFrameData(i);
-            FrameInputPacket inputPacket =
+            FramePacketS2C packetS2C =
                 Utils.BuildCommandSetPacket(i, historyFrame.PlayerInputCommands);
-            Byte[] bytes = Utils.SerializedPacket(new PacketHeader { type = (int)PacketType.FrameInput }, inputPacket);
+            Byte[] bytes = Utils.SerializedPacket(new PacketHeader { type = (int)PacketTypeS2C.FrameS2C }, packetS2C);
             _networkManager.SendBufToClient(bytes, bytes.Length, from);
         }
     }
@@ -250,15 +250,15 @@ public static class ServerLoop
 
     private static void HandleCommand(byte[] data, IPEndPoint from)
     {
-        if (Utils.DeserializedPacket(data).Body is not InputPacket input)
+        if (Utils.DeserializedPacket(data).Body is not FramePacketC2S input)
             return;
 
-        if (_authorityHashes.TryGetValue(input.frame_number, out ulong authorityHash) && authorityHash != input.hash)
+        if (AuthorityHashes.TryGetValue(input.frame_number, out ulong authorityHash) && authorityHash != input.hash)
         {
             Console.WriteLine($"帧哈希不一致:帧 {input.frame_number} 客户端 {input.hash} 权威 {authorityHash}");
 
             Byte[] errBytes = Utils.SerializedPacket(
-                new PacketHeader { type = (int)PacketType.HashError },
+                new PacketHeader { type = (int)PacketTypeS2C.HashError },
                 new HashErrorPacket { frame_number = input.frame_number });
             _networkManager.SendBufToClient(errBytes, errBytes.Length, from);
             return;

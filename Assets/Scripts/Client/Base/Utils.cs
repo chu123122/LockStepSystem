@@ -31,7 +31,7 @@ namespace Client.Base
         {
             Reader r = new Reader(data);
             PacketHeader header = new PacketHeader { type = r.ReadInt() };
-            if (Deserializer.TryGetValue((PacketType)header.type, out Func<Reader, object?>? deserialize))
+            if (Deserializer.TryGetValue((PacketTypeS2C)header.type, out Func<Reader, object?>? deserialize))
             {
                 return (header, deserialize(r));
             }
@@ -39,18 +39,17 @@ namespace Client.Base
             throw new ArgumentException($"反序列化:未知包类型 {header.type}");
         }
 
-     
-
-        private static readonly Dictionary<PacketType, Func<Reader, object?>> Deserializer = new()
+        private static readonly Dictionary<PacketTypeS2C, Func<Reader, object?>> Deserializer = new()
         {
-            [PacketType.Response] = r => new JoinPacket { id = r.ReadInt(), frame_number = r.ReadInt() },
-            [PacketType.CommandSet] = r => ReadFramePacket(r),
-            [PacketType.InitWorld] = r => ReadInitWorld(r),
+            [PacketTypeS2C.Response] = r => new JoinPacket { id = r.ReadInt(), frame_number = r.ReadInt() },
+            [PacketTypeS2C.FrameS2C] = r => ReadFramePacket(r),
+            [PacketTypeS2C.InitWorld] = r => ReadInitWorld(r),
+            [PacketTypeS2C.HashError] = r => new HashErrorPacket { frame_number = r.ReadInt() },
         };
 
-        private static FramePacket ReadFramePacket(Reader r)
+        private static FramePacketS2C ReadFramePacket(Reader r)
         {
-            FramePacket fp = new FramePacket { frame_number = r.ReadInt(), command_count = r.ReadInt() };
+            FramePacketS2C fp = new FramePacketS2C { frame_number = r.ReadInt(), command_count = r.ReadInt() };
             PlayerInputCommand[] cmds = new PlayerInputCommand[fp.command_count];
             for (int i = 0; i < cmds.Length; i++)
             {

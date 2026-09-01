@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace LockStepServer.Protocol;
 
 
@@ -23,4 +25,17 @@ public class FrameData
         Status = FrameStatus.Collecting;
         CreationTime = DateTime.UtcNow;
     }
+}
+
+public enum CommandType
+{
+    Create = 1,
+    Move = 2,
+}
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct PlayerInputCommand
+{
+    public int id; // 客户端id
+    public int command_type;
+    public float x, y, z; // 移动位置
 }
