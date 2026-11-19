@@ -14,6 +14,11 @@
 dotnet run --project dotnet/LockStepServer/LockStepServer.csproj
 ```
 
+如果你使用更新版的sdk：
+```powershell
+$env:DOTNET_ROLL_FORWARD='Major'; dotnet run --project dotnet/LockStepServer/LockStepServer.csproj
+```
+
 然后使用 Unity 打开项目根目录，进入 `Assets/Scenes/SampleScene.unity` 并点击 Play。客户端会自动连接本机 `127.0.0.1:8888`。
 
 更详细设计分析见博客：https://blog-b9l.pages.dev/2025/09/06/%E6%8A%80%E6%9C%AF%E8%AE%B0%E5%BD%95/%E5%B8%A7%E5%90%8C%E6%AD%A5%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E8%AE%B0%E5%BD%95/
